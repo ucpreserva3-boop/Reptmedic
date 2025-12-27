@@ -389,7 +389,30 @@ async function gerarPDF() {
   link.download = "receita_preenchida.pdf";
   link.click();
 }
+  <script>
+function salvarManual() {
+  const nome = document.getElementById("manualNome").value;
+  const uso  = document.getElementById("manualUso").value;
+
+  if (!nome || !uso) {
+    alert("Preencha nome e modo de uso.");
+    return;
+  }
+
+  bancoMedicacoes.push({
+    cat: "Medicações adicionadas manualmente",
+    nome: capitalizarPrimeira(nome),
+    uso: capitalizarPrimeira(uso)
+  });
+
+  document.getElementById("manualNome").value = "";
+  document.getElementById("manualUso").value = "";
+
+  renderizarLista();
+  alert("Medicação salva com sucesso!");
+}
 </script>
 
 </body>
 </html>
+
