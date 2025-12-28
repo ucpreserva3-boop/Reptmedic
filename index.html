@@ -8,203 +8,181 @@
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js" defer></script>
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f4f4f4;
+body{margin:0;font-family:Arial,sans-serif;background:#f4f4f4}
+.container{max-width:700px;margin:auto;padding:16px}
+h1{text-align:center;margin-bottom:20px}
+.campo{margin-bottom:16px}
+label{font-weight:bold;display:block;margin-bottom:6px}
+input,select,textarea,button{width:100%;padding:12px;font-size:16px;box-sizing:border-box}
+button{background:#27ae60;color:#fff;border:none;border-radius:6px;cursor:pointer}
+.medicacao-box{background:#fff;border:1px solid #ccc;padding:10px;margin-bottom:10px}
+.medicacao-linha{display:flex;gap:6px;align-items:center}
+.num{width:32px;font-weight:bold;text-align:center}
+.btn-apagar{background:#e74c3c}
+.btn-lupa{background:#34495e}
+.btn-add{background:#2980b9;margin-top:8px}
+
+/* SIDEBAR */
+.sidebar{
+  position:fixed;
+  top:0;right:-100%;
+  width:100%;height:100%;
+  background:#fff;
+  padding:16px;
+  overflow-y:auto;
+  transition:.3s;
+  z-index:999
 }
-.container {
-  max-width: 650px;
-  margin: auto;
-  padding: 16px;
-}
-h1 {
-  text-align: center;
-  margin-bottom: 24px;
-}
-.campo {
-  margin-bottom: 18px;
-}
-label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 6px;
-}
-input, select, textarea, button {
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  box-sizing: border-box;
-}
-button {
-  background: #27ae60;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-.medicacao-box {
-  background: #fff;
-  border: 1px solid #ccc;
-  padding: 10px;
-  margin-bottom: 10px;
-}
-.medicacao-linha {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.num {
-  width: 32px;
-  text-align: center;
-  font-weight: bold;
-}
-.btn-apagar {
-  background: #e74c3c;
-}
-.btn-lupa {
-  background: #34495e;
-}
-.btn-add {
-  background: #2980b9;
-  margin-top: 10px;
-}
+.sidebar.open{right:0}
+.categoria{font-weight:bold;margin-top:14px}
+.item{padding:6px;border-bottom:1px dashed #ccc;cursor:pointer}
+.item:hover{background:#f0f0f0}
+.close{background:#e74c3c;margin-bottom:10px}
 </style>
 </head>
 
 <body>
 
 <div class="container">
-  <h1>Receita Médica</h1>
+<h1>Receita Médica</h1>
 
-  <div class="campo">
-    <label>Selecionar PDF base</label>
-    <input type="file" id="pdfBase" accept="application/pdf">
-  </div>
+<div class="campo">
+<label>Selecionar PDF base</label>
+<input type="file" id="pdfBase" accept="application/pdf">
+</div>
 
-  <div class="campo">
-    <label>NOME DO PACIENTE</label>
-    <input id="nomePaciente" oninput="this.value=this.value.toUpperCase()">
-  </div>
+<div class="campo">
+<label>NOME DO PACIENTE</label>
+<input id="nomePaciente" oninput="this.value=this.value.toUpperCase()">
+</div>
 
-  <div class="campo">
-    <label>USO</label>
-    <select id="uso">
-      <option value="">Selecione</option>
-      <option>USO ORAL</option>
-      <option>USO TÓPICO</option>
-    </select>
-  </div>
+<div class="campo">
+<label>USO</label>
+<select id="uso">
+<option value="">Selecione</option>
+<option>USO ORAL</option>
+<option>USO TÓPICO</option>
+</select>
+</div>
 
-  <div class="campo">
-    <label>MEDICAÇÕES</label>
-    <div id="listaMedicacoes"></div>
-    <button class="btn-add" onclick="adicionarMedicacao()">➕ Adicionar Medicação</button>
-  </div>
+<div class="campo">
+<label>MEDICAÇÕES</label>
+<div id="listaMedicacoes"></div>
+<button class="btn-add" onclick="adicionarMedicacao()">➕ Adicionar Medicação</button>
+</div>
 
-  <button onclick="gerarPDF()">📄 Gerar PDF</button>
+<button onclick="gerarPDF()">📄 Gerar PDF</button>
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar" class="sidebar">
+<button class="close" onclick="fecharSidebar()">Fechar</button>
+<input placeholder="Buscar..." oninput="renderizarLista(this.value)">
+<div id="listaSidebar"></div>
 </div>
 
 <script>
-const LIMITE = 8;
+const LIMITE=8;
+let campoAtual=null;
 
-function adicionarMedicacao() {
-  const lista = document.getElementById("listaMedicacoes");
-  if (lista.children.length >= LIMITE) {
-    alert("Limite máximo de 8 medicações.");
-    return;
+/* ===== BANCO ===== */
+const banco=[
+{c:"❤️ Hipertensão / Cardiovascular",n:"HIDROCLOROTIAZIDA 25MG – 60+60+60+60 CP",u:"TOMAR 1 CP CEDO E 1 CP À NOITE"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"LOSARTANA POTÁSSICA 50MG – 60+60+60+60 CP",u:"TOMAR 1 CP CEDO E 1 CP À NOITE"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"LOSARTANA POTÁSSICA 30MG – 60/60/60 CP",u:"TOMAR 1 CP 12/12H"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"CARVEDILOL 6,25MG – 60/60/60 CP",u:"TOMAR 1 CP VO 12/12H"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"FUROSEMIDA 40MG – 30/30/30 CP",u:"TOMAR MEIO CP AO DIA"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"ESPIRONOLACTONA 25MG – 30/30/30 CP",u:"TOMAR 1 CP CEDO"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"DIGOXINA 0,25MG – 30/30/30 CP",u:"TOMAR MEIO CP AO DIA"},
+{c:"🫁 Asma / Doenças respiratórias",n:"AEROLIN SPRAY – 1 UNIDADE",u:"ASPIRAR 2 JATOS DE 8/8H SE FALTA DE AR"},
+{c:"🤧 Antialérgicos",n:"DEXCLORFENIRAMINA 2MG – 20 CP",u:"TOMAR 1 CP DE 8/8H"},
+{c:"💊 Dor / Febre",n:"PARACETAMOL 500MG – 24 CP",u:"TOMAR 1 CP VO DE 6/6H"},
+{c:"🦠 Antibióticos",n:"AMOXICILINA 500MG – 30 CP",u:"TOMAR 2 CP DE 8/8H"}
+];
+
+/* ===== MEDICAÇÕES ===== */
+function adicionarMedicacao(){
+ if(document.querySelectorAll(".medicacao-box").length>=LIMITE)
+   return alert("Limite de 8 medicações.");
+ const d=document.createElement("div");
+ d.className="medicacao-box";
+ d.innerHTML=`
+ <div class="medicacao-linha">
+  <div class="num"></div>
+  <input class="med1">
+  <button class="btn-lupa" onclick="abrirSidebar(this)">🔍</button>
+  <button class="btn-apagar" onclick="this.closest('.medicacao-box').remove();num()">APAGAR</button>
+ </div>
+ <textarea class="med2"></textarea>`;
+ document.getElementById("listaMedicacoes").appendChild(d);
+ num();
+}
+function num(){
+ document.querySelectorAll(".num").forEach((e,i)=>e.textContent=(i+1)+")");
+}
+
+/* ===== SIDEBAR ===== */
+function abrirSidebar(btn){
+ campoAtual=btn.closest(".medicacao-box");
+ document.getElementById("sidebar").classList.add("open");
+ renderizarLista();
+}
+function fecharSidebar(){
+ document.getElementById("sidebar").classList.remove("open");
+}
+function renderizarLista(f=""){
+ const l=document.getElementById("listaSidebar");
+ l.innerHTML="";
+ let cat="";
+ banco.filter(m=>(m.n+m.u).includes(f.toUpperCase())).forEach(m=>{
+  if(m.c!==cat){
+    cat=m.c;
+    const c=document.createElement("div");
+    c.className="categoria";
+    c.textContent=m.c;
+    l.appendChild(c);
   }
-
-  const box = document.createElement("div");
-  box.className = "medicacao-box";
-
-  box.innerHTML = `
-    <div class="medicacao-linha">
-      <div class="num"></div>
-      <input placeholder="Medicação e mg/ml" oninput="this.value=this.value.toUpperCase()">
-      <button class="btn-lupa" onclick="buscar()">🔍</button>
-      <button class="btn-apagar" onclick="this.closest('.medicacao-box').remove(); atualizarNumeracao()">APAGAR</button>
-    </div>
-    <textarea placeholder="Tomar V.O" oninput="this.value=this.value.toUpperCase()"></textarea>
-  `;
-
-  lista.appendChild(box);
-  atualizarNumeracao();
+  const i=document.createElement("div");
+  i.className="item";
+  i.innerHTML=`<strong>${m.n}</strong><br>${m.u}`;
+  i.onclick=()=>{
+    campoAtual.querySelector(".med1").value=m.n;
+    campoAtual.querySelector(".med2").value=m.u;
+    fecharSidebar();
+  };
+  l.appendChild(i);
+ });
 }
 
-function atualizarNumeracao() {
-  document.querySelectorAll(".medicacao-box .num").forEach((el, i) => {
-    el.textContent = (i + 1) + ")";
-  });
-}
+/* ===== PDF ===== */
+async function gerarPDF(){
+ const file=document.getElementById("pdfBase").files[0];
+ if(!file) return alert("Selecione o PDF base.");
+ const pdf=await PDFLib.PDFDocument.load(await file.arrayBuffer());
+ const font=await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
+ const p=pdf.getPages()[0];
 
-function buscar() {
-  alert("Busca será implementada no próximo passo.");
-}
+ p.drawText(nomePaciente.value,{x:188,y:1361.5,size:28,font});
+ p.drawText(nomePaciente.value,{x:1370.25,y:1361.5,size:28,font});
 
-async function gerarPDF() {
-  const file = document.getElementById("pdfBase").files[0];
-  if (!file) return alert("Selecione o PDF base.");
+ if(uso.value){
+  p.drawText(uso.value,{x:406.4,y:1150.64,size:25,font});
+  p.drawText(uso.value,{x:1587.4,y:1150.64,size:25,font});
+ }
 
-  const nome = document.getElementById("nomePaciente").value.trim().toUpperCase();
-  const uso = document.getElementById("uso").value;
+ let y=1009.17;
+ document.querySelectorAll(".medicacao-box").forEach((b,i)=>{
+  const t=`${i+1}) ${b.querySelector(".med1").value}\n${b.querySelector(".med2").value}`;
+  p.drawText(t,{x:157,y,size:25,font,lineHeight:30});
+  p.drawText(t,{x:1339.33,y,size:25,font,lineHeight:30});
+  y-=120;
+ });
 
-  const pdfBytes = await file.arrayBuffer();
-  const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
-  const font = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRoman);
-  const page = pdfDoc.getPages()[0];
-
-  /* NOME */
-  page.drawText(nome, { x:188.00, y:1361.50, size:28, font });
-  page.drawText(nome, { x:1370.25, y:1361.50, size:28, font });
-
-  /* USO */
-  if (uso) {
-    page.drawText(uso, { x:406.40, y:1150.64, size:25, font });
-    page.drawText(uso, { x:1587.40, y:1150.64, size:25, font });
-  }
-
-  /* MEDICAÇÕES */
-  let yEsq = 1009.17;
-  let yDir = 1009.17;
-
-  document.querySelectorAll(".medicacao-box").forEach((box, i) => {
-    const med = box.querySelector("input").value;
-    const pos = box.querySelector("textarea").value;
-
-    const texto = `${i+1}) ${med}\n${pos}`;
-
-    page.drawText(texto, {
-      x: 157.00,
-      y: yEsq,
-      size: 25,
-      font,
-      lineHeight: 30
-    });
-
-    page.drawText(texto, {
-      x: 1339.33,
-      y: yDir,
-      size: 25,
-      font,
-      lineHeight: 30
-    });
-
-    yEsq -= 120;
-    yDir -= 120;
-  });
-
-  const finalPdf = await pdfDoc.save();
-  const blob = new Blob([finalPdf], { type:"application/pdf" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "receita_preenchida.pdf";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+ const blob=new Blob([await pdf.save()],{type:"application/pdf"});
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download="receita.pdf";
+ a.click();
 }
 </script>
 
