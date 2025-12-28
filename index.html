@@ -39,7 +39,7 @@ label {
   margin-bottom: 6px;
 }
 
-input, button {
+input, select, button {
   width: 100%;
   padding: 14px;
   font-size: 16px;
@@ -78,6 +78,16 @@ button {
     >
   </div>
 
+  <!-- USO -->
+  <div class="campo">
+    <label>USO</label>
+    <select id="uso">
+      <option value="">Selecione</option>
+      <option value="USO ORAL">USO ORAL</option>
+      <option value="USO TÓPICO">USO TÓPICO</option>
+    </select>
+  </div>
+
   <!-- GERAR PDF -->
   <button onclick="gerarPDF()">📄 Gerar PDF</button>
 
@@ -86,9 +96,7 @@ button {
 <script>
 async function gerarPDF() {
   try {
-    const fileInput = document.getElementById("pdfBase");
-    const file = fileInput.files[0];
-
+    const file = document.getElementById("pdfBase").files[0];
     if (!file) {
       alert("Selecione o PDF base.");
       return;
@@ -102,6 +110,12 @@ async function gerarPDF() {
 
     if (!nome) {
       alert("Informe o nome do paciente.");
+      return;
+    }
+
+    const uso = document.getElementById("uso").value;
+    if (!uso) {
+      alert("Selecione o tipo de uso.");
       return;
     }
 
@@ -130,6 +144,22 @@ async function gerarPDF() {
       font
     });
 
+    /* ===== USO — ESQUERDO ===== */
+    page.drawText(uso, {
+      x: 406.40,
+      y: 1150.64,
+      size: 25,
+      font
+    });
+
+    /* ===== USO — DIREITO ===== */
+    page.drawText(uso, {
+      x: 1587.40,
+      y: 1150.64,
+      size: 25,
+      font
+    });
+
     // Salva PDF
     const pdfFinal = await pdfDoc.save();
     const blob = new Blob([pdfFinal], { type: "application/pdf" });
@@ -138,7 +168,7 @@ async function gerarPDF() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "receita_nome_preenchido.pdf";
+    link.download = "receita_nome_uso_preenchido.pdf";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
