@@ -33,17 +33,14 @@ button{background:#27ae60;color:#fff;border:none;border-radius:6px;cursor:pointe
   inset:0;
   background:#fff;
   z-index:999;
-  display:flex;
+  display:none;
   flex-direction:column;
 }
 
-/* TOPO FIXO */
 .sidebar-topo{
   background:#e74c3c;
   padding:6px 10px;
 }
-
-/* BOTÃO FECHAR — NÃO HERDA O TAMANHO GLOBAL */
 .sidebar-topo button{
   padding:6px 10px;
   font-size:14px;
@@ -52,7 +49,6 @@ button{background:#27ae60;color:#fff;border:none;border-radius:6px;cursor:pointe
   background:#c0392b;
 }
 
-/* BUSCA */
 .sidebar-busca{
   padding:8px;
 }
@@ -62,7 +58,6 @@ button{background:#27ae60;color:#fff;border:none;border-radius:6px;cursor:pointe
   height:32px;
 }
 
-/* LISTA */
 .sidebar-lista{
   flex:1;
   overflow-y:auto;
@@ -83,7 +78,6 @@ button{background:#27ae60;color:#fff;border:none;border-radius:6px;cursor:pointe
   cursor:pointer;
   word-break:break-word;
 }
-
 .item:hover{background:#f0f0f0}
 </style>
 </head>
@@ -131,15 +125,13 @@ button{background:#27ae60;color:#fff;border:none;border-radius:6px;cursor:pointe
 </div>
 
 <!-- SIDEBAR -->
-<div id="sidebar" class="sidebar" style="display:none">
+<div id="sidebar" class="sidebar">
   <div class="sidebar-topo">
     <button onclick="fecharSidebar()">Fechar</button>
   </div>
-
   <div class="sidebar-busca">
     <input placeholder="Buscar..." oninput="renderizarLista(this.value)">
   </div>
-
   <div id="listaSidebar" class="sidebar-lista"></div>
 </div>
 
@@ -152,6 +144,7 @@ function cap(t){
  return t?t[0].toUpperCase()+t.slice(1):"";
 }
 
+/* BANCO */
 const banco=[
 {c:"❤️ Hipertensão / Cardiovascular",n:"Hidroclorotiazida 25mg – 60+60+60+60 CP",u:"Tomar 1 CP cedo e 1 CP à noite"},
 {c:"❤️ Hipertensão / Cardiovascular",n:"Losartana Potássica 50mg – 60+60+60+60 CP",u:"Tomar 1 CP cedo e 1 CP à noite"},
@@ -160,8 +153,10 @@ const banco=[
 {c:"❤️ Hipertensão / Cardiovascular",n:"Furosemida 40mg – 30/30/30 CP",u:"Tomar meio CP ao dia"}
 ];
 
+/* MEDICAÇÕES */
 function adicionarMedicacao(){
- if(document.querySelectorAll(".medicacao-box").length>=LIMITE) return;
+ if(document.querySelectorAll(".medicacao-box").length>=LIMITE)
+  return alert("Limite máximo de 8 medicações.");
  const d=document.createElement("div");
  d.className="medicacao-box";
  d.innerHTML=`
@@ -180,12 +175,12 @@ function numerar(){
  document.querySelectorAll(".num").forEach((e,i)=>e.textContent=(i+1)+")");
 }
 
+/* SIDEBAR */
 function abrirSidebar(btn){
  campoAtual=btn.closest(".medicacao-box");
  document.getElementById("sidebar").style.display="flex";
  renderizarLista();
 }
-
 function fecharSidebar(){
  document.getElementById("sidebar").style.display="none";
 }
@@ -213,6 +208,48 @@ function renderizarLista(f=""){
   };
   l.appendChild(i);
  });
+}
+
+/* PDF — RESTAURADO */
+async function gerarPDF(){
+ const file=document.getElementById("pdfBase").files[0];
+ if(!file) return alert("Selecione o PDF base.");
+
+ const pdf=await PDFLib.PDFDocument.load(await file.arrayBuffer());
+ const font=await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
+ const p=pdf.getPages()[0];
+
+ p.drawText(nomePaciente.value,{x:188,y:1361.5,size:28,font});
+ p.drawText(nomePaciente.value,{x:1370.25,y:1361.5,size:28,font});
+
+ if(uso.value){
+  p.drawText(uso.value,{x:406.4,y:1150.64,size:25,font});
+  p.drawText(uso.value,{x:1587.4,y:1150.64,size:25,font});
+ }
+
+ let y=1009.17;
+ document.querySelectorAll(".medicacao-box").forEach((b,i)=>{
+  const t=`${i+1}) ${b.querySelector(".med1").value}\n${b.querySelector(".med2").value}`;
+  p.drawText(t,{x:157,y,size:25,font,lineHeight:30});
+  p.drawText(t,{x:1339.33,y,size:25,font,lineHeight:30});
+  y-=120;
+ });
+
+ const d=dataDia.value,m=dataMes.value,a=dataAno.value;
+ if(d&&m&&a){
+  p.drawText(d,{x:878,y:171.83,size:25,font});
+  p.drawText(m,{x:933.5,y:171.83,size:25,font});
+  p.drawText(a,{x:990.5,y:171.83,size:25,font});
+  p.drawText(d,{x:2060.5,y:171.83,size:25,font});
+  p.drawText(m,{x:2117.5,y:171.83,size:25,font});
+  p.drawText(a,{x:2172,y:171.83,size:25,font});
+ }
+
+ const blob=new Blob([await pdf.save()],{type:"application/pdf"});
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download="receita.pdf";
+ a.click();
 }
 </script>
 
