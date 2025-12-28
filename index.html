@@ -8,8 +8,8 @@
 
 <title>Preenchimento de Receita</title>
 
-<!-- pdf-lib -->
-<script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+<!-- pdf-lib (compatível com GitHub Pages / iOS) -->
+<script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js" defer></script>
 
 <style>
 body {
@@ -85,69 +85,71 @@ button {
 
 <script>
 async function gerarPDF() {
+  try {
+    const fileInput = document.getElementById("pdfBase");
+    const file = fileInput.files[0];
 
-  const file = document.getElementById("pdfBase").files[0];
-  if (!file) {
-    alert("Selecione o PDF base.");
-    return;
+    if (!file) {
+      alert("Selecione o PDF base.");
+      return;
+    }
+
+    const nome = document
+      .getElementById("nomePaciente")
+      .value
+      .toUpperCase()
+      .trim();
+
+    if (!nome) {
+      alert("Informe o nome do paciente.");
+      return;
+    }
+
+    // Lê o PDF base
+    const pdfBytes = await file.arrayBuffer();
+    const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+
+    // Fonte Times New Roman
+    const font = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRoman);
+
+    const page = pdfDoc.getPages()[0];
+
+    /* ===== NOME DO PACIENTE — ESQUERDO ===== */
+    page.drawText(nome, {
+      x: 188.00,
+      y: 1361.50,
+      size: 28,
+      font
+    });
+
+    /* ===== NOME DO PACIENTE — DIREITO ===== */
+    page.drawText(nome, {
+      x: 1370.25,
+      y: 1361.50,
+      size: 28,
+      font
+    });
+
+    // Salva PDF
+    const pdfFinal = await pdfDoc.save();
+    const blob = new Blob([pdfFinal], { type: "application/pdf" });
+
+    // Download compatível com Safari iOS
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "receita_nome_preenchido.pdf";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao gerar o PDF.");
   }
-
-  const nome = document
-    .getElementById("nomePaciente")
-    .value
-    .toUpperCase()
-    .trim();
-
-  if (!nome) {
-    alert("Informe o nome do paciente.");
-    return;
-  }
-
-  // Carrega o PDF base
-  const pdfBytes = await file.arrayBuffer();
-  const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
-
-  // Fonte Times New Roman
-  const font = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRoman);
-
-  const page = pdfDoc.getPages()[0];
-
-  /* ===============================
-     NOME DO PACIENTE — ESQUERDO
-     X = 188.00
-     Y = 1361.50
-  =============================== */
-  page.drawText(nome, {
-    x: 188.00,
-    y: 1361.50,
-    size: 28,
-    font
-  });
-
-  /* ===============================
-     NOME DO PACIENTE — DIREITO
-     X = 1370.25
-     Y = 1361.50  (MESMA ALTURA)
-  =============================== */
-  page.drawText(nome, {
-    x: 1370.25,
-    y: 1361.50,
-    size: 28,
-    font
-  });
-
-  // Salva o PDF final
-  const pdfFinal = await pdfDoc.save();
-  const blob = new Blob([pdfFinal], { type: "application/pdf" });
-
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "receita_nome_preenchido.pdf";
-  link.click();
 }
 </script>
 
 </body>
 </html>
-
-
