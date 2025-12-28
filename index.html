@@ -2,13 +2,9 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-
-<!-- Obrigatório para iOS / Safari -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-
 <title>Preenchimento de Receita</title>
 
-<!-- pdf-lib (compatível com GitHub Pages / iOS) -->
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js" defer></script>
 
 <style>
@@ -17,35 +13,29 @@ body {
   font-family: Arial, sans-serif;
   background: #f4f4f4;
 }
-
 .container {
-  max-width: 600px;
+  max-width: 650px;
   margin: auto;
   padding: 16px;
 }
-
 h1 {
   text-align: center;
   margin-bottom: 24px;
 }
-
 .campo {
   margin-bottom: 18px;
 }
-
 label {
   display: block;
   font-weight: bold;
   margin-bottom: 6px;
 }
-
-input, select, button {
+input, select, textarea, button {
   width: 100%;
-  padding: 14px;
+  padding: 12px;
   font-size: 16px;
   box-sizing: border-box;
 }
-
 button {
   background: #27ae60;
   color: #fff;
@@ -53,131 +43,168 @@ button {
   border-radius: 8px;
   cursor: pointer;
 }
+.medicacao-box {
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+.medicacao-linha {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.num {
+  width: 32px;
+  text-align: center;
+  font-weight: bold;
+}
+.btn-apagar {
+  background: #e74c3c;
+}
+.btn-lupa {
+  background: #34495e;
+}
+.btn-add {
+  background: #2980b9;
+  margin-top: 10px;
+}
 </style>
 </head>
 
 <body>
 
 <div class="container">
-
   <h1>Receita Médica</h1>
 
-  <!-- PDF BASE -->
   <div class="campo">
     <label>Selecionar PDF base</label>
     <input type="file" id="pdfBase" accept="application/pdf">
   </div>
 
-  <!-- NOME DO PACIENTE -->
   <div class="campo">
     <label>NOME DO PACIENTE</label>
-    <input
-      id="nomePaciente"
-      placeholder="Digite o nome completo"
-      oninput="this.value = this.value.toUpperCase()"
-    >
+    <input id="nomePaciente" oninput="this.value=this.value.toUpperCase()">
   </div>
 
-  <!-- USO -->
   <div class="campo">
     <label>USO</label>
     <select id="uso">
       <option value="">Selecione</option>
-      <option value="USO ORAL">USO ORAL</option>
-      <option value="USO TÓPICO">USO TÓPICO</option>
+      <option>USO ORAL</option>
+      <option>USO TÓPICO</option>
     </select>
   </div>
 
-  <!-- GERAR PDF -->
-  <button onclick="gerarPDF()">📄 Gerar PDF</button>
+  <div class="campo">
+    <label>MEDICAÇÕES</label>
+    <div id="listaMedicacoes"></div>
+    <button class="btn-add" onclick="adicionarMedicacao()">➕ Adicionar Medicação</button>
+  </div>
 
+  <button onclick="gerarPDF()">📄 Gerar PDF</button>
 </div>
 
 <script>
-async function gerarPDF() {
-  try {
-    const file = document.getElementById("pdfBase").files[0];
-    if (!file) {
-      alert("Selecione o PDF base.");
-      return;
-    }
+const LIMITE = 8;
 
-    const nome = document
-      .getElementById("nomePaciente")
-      .value
-      .toUpperCase()
-      .trim();
-
-    if (!nome) {
-      alert("Informe o nome do paciente.");
-      return;
-    }
-
-    const uso = document.getElementById("uso").value;
-    if (!uso) {
-      alert("Selecione o tipo de uso.");
-      return;
-    }
-
-    // Lê o PDF base
-    const pdfBytes = await file.arrayBuffer();
-    const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
-
-    // Fonte Times New Roman
-    const font = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRoman);
-
-    const page = pdfDoc.getPages()[0];
-
-    /* ===== NOME DO PACIENTE — ESQUERDO ===== */
-    page.drawText(nome, {
-      x: 188.00,
-      y: 1361.50,
-      size: 28,
-      font
-    });
-
-    /* ===== NOME DO PACIENTE — DIREITO ===== */
-    page.drawText(nome, {
-      x: 1370.25,
-      y: 1361.50,
-      size: 28,
-      font
-    });
-
-    /* ===== USO — ESQUERDO ===== */
-    page.drawText(uso, {
-      x: 406.40,
-      y: 1150.64,
-      size: 25,
-      font
-    });
-
-    /* ===== USO — DIREITO ===== */
-    page.drawText(uso, {
-      x: 1587.40,
-      y: 1150.64,
-      size: 25,
-      font
-    });
-
-    // Salva PDF
-    const pdfFinal = await pdfDoc.save();
-    const blob = new Blob([pdfFinal], { type: "application/pdf" });
-
-    // Download compatível com Safari iOS
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "receita_nome_uso_preenchido.pdf";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-  } catch (err) {
-    console.error(err);
-    alert("Erro ao gerar o PDF.");
+function adicionarMedicacao() {
+  const lista = document.getElementById("listaMedicacoes");
+  if (lista.children.length >= LIMITE) {
+    alert("Limite máximo de 8 medicações.");
+    return;
   }
+
+  const box = document.createElement("div");
+  box.className = "medicacao-box";
+
+  box.innerHTML = `
+    <div class="medicacao-linha">
+      <div class="num"></div>
+      <input placeholder="Medicação e mg/ml" oninput="this.value=this.value.toUpperCase()">
+      <button class="btn-lupa" onclick="buscar()">🔍</button>
+      <button class="btn-apagar" onclick="this.closest('.medicacao-box').remove(); atualizarNumeracao()">APAGAR</button>
+    </div>
+    <textarea placeholder="Tomar V.O" oninput="this.value=this.value.toUpperCase()"></textarea>
+  `;
+
+  lista.appendChild(box);
+  atualizarNumeracao();
+}
+
+function atualizarNumeracao() {
+  document.querySelectorAll(".medicacao-box .num").forEach((el, i) => {
+    el.textContent = (i + 1) + ")";
+  });
+}
+
+function buscar() {
+  alert("Busca será implementada no próximo passo.");
+}
+
+async function gerarPDF() {
+  const file = document.getElementById("pdfBase").files[0];
+  if (!file) return alert("Selecione o PDF base.");
+
+  const nome = document.getElementById("nomePaciente").value.trim().toUpperCase();
+  const uso = document.getElementById("uso").value;
+
+  const pdfBytes = await file.arrayBuffer();
+  const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+  const font = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRoman);
+  const page = pdfDoc.getPages()[0];
+
+  /* NOME */
+  page.drawText(nome, { x:188.00, y:1361.50, size:28, font });
+  page.drawText(nome, { x:1370.25, y:1361.50, size:28, font });
+
+  /* USO */
+  if (uso) {
+    page.drawText(uso, { x:406.40, y:1150.64, size:25, font });
+    page.drawText(uso, { x:1587.40, y:1150.64, size:25, font });
+  }
+
+  /* MEDICAÇÕES */
+  let yEsq = 1009.17;
+  let yDir = 1009.17;
+
+  document.querySelectorAll(".medicacao-box").forEach((box, i) => {
+    const med = box.querySelector("input").value;
+    const pos = box.querySelector("textarea").value;
+
+    const texto = `${i+1}) ${med}\n${pos}`;
+
+    page.drawText(texto, {
+      x: 157.00,
+      y: yEsq,
+      size: 25,
+      font,
+      lineHeight: 30
+    });
+
+    page.drawText(texto, {
+      x: 1339.33,
+      y: yDir,
+      size: 25,
+      font,
+      lineHeight: 30
+    });
+
+    yEsq -= 120;
+    yDir -= 120;
+  });
+
+  const finalPdf = await pdfDoc.save();
+  const blob = new Blob([finalPdf], { type:"application/pdf" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "receita_preenchida.pdf";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 </script>
 
