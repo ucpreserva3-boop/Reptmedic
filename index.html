@@ -85,39 +85,44 @@ button{background:#27ae60;color:#fff;border:none;border-radius:6px;cursor:pointe
 const LIMITE=8;
 let campoAtual=null;
 
-/* ===== BANCO ===== */
+/* ===== FUNÇÃO DE CAPITALIZAÇÃO ===== */
+function capitalizarPrimeiraLetra(texto){
+  texto = texto.trimStart();
+  if (!texto) return "";
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+/* ===== BANCO DE MEDICAÇÕES ===== */
 const banco=[
-{c:"❤️ Hipertensão / Cardiovascular",n:"HIDROCLOROTIAZIDA 25MG – 60+60+60+60 CP",u:"TOMAR 1 CP CEDO E 1 CP À NOITE"},
-{c:"❤️ Hipertensão / Cardiovascular",n:"LOSARTANA POTÁSSICA 50MG – 60+60+60+60 CP",u:"TOMAR 1 CP CEDO E 1 CP À NOITE"},
-{c:"❤️ Hipertensão / Cardiovascular",n:"LOSARTANA POTÁSSICA 30MG – 60/60/60 CP",u:"TOMAR 1 CP 12/12H"},
-{c:"❤️ Hipertensão / Cardiovascular",n:"CARVEDILOL 6,25MG – 60/60/60 CP",u:"TOMAR 1 CP VO 12/12H"},
-{c:"❤️ Hipertensão / Cardiovascular",n:"FUROSEMIDA 40MG – 30/30/30 CP",u:"TOMAR MEIO CP AO DIA"},
-{c:"❤️ Hipertensão / Cardiovascular",n:"ESPIRONOLACTONA 25MG – 30/30/30 CP",u:"TOMAR 1 CP CEDO"},
-{c:"❤️ Hipertensão / Cardiovascular",n:"DIGOXINA 0,25MG – 30/30/30 CP",u:"TOMAR MEIO CP AO DIA"},
-{c:"🫁 Asma / Doenças respiratórias",n:"AEROLIN SPRAY – 1 UNIDADE",u:"ASPIRAR 2 JATOS DE 8/8H SE FALTA DE AR"},
-{c:"🤧 Antialérgicos",n:"DEXCLORFENIRAMINA 2MG – 20 CP",u:"TOMAR 1 CP DE 8/8H"},
-{c:"💊 Dor / Febre",n:"PARACETAMOL 500MG – 24 CP",u:"TOMAR 1 CP VO DE 6/6H"},
-{c:"🦠 Antibióticos",n:"AMOXICILINA 500MG – 30 CP",u:"TOMAR 2 CP DE 8/8H"}
+{c:"❤️ Hipertensão / Cardiovascular",n:"Hidroclorotiazida 25mg – 60+60+60+60 CP",u:"Tomar 1 CP cedo e 1 CP à noite"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Losartana Potássica 50mg – 60+60+60+60 CP",u:"Tomar 1 CP cedo e 1 CP à noite"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Losartana Potássica 30mg – 60/60/60 CP",u:"Tomar 1 CP 12/12h"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Carvedilol 6,25mg – 60/60/60 CP",u:"Tomar 1 CP VO 12/12h"}
 ];
 
 /* ===== MEDICAÇÕES ===== */
 function adicionarMedicacao(){
  if(document.querySelectorAll(".medicacao-box").length>=LIMITE)
    return alert("Limite de 8 medicações.");
+
  const d=document.createElement("div");
  d.className="medicacao-box";
  d.innerHTML=`
  <div class="medicacao-linha">
   <div class="num"></div>
-  <input class="med1">
+  <input class="med1" placeholder="Medicação e mg/ml"
+    oninput="this.value = capitalizarPrimeiraLetra(this.value)">
   <button class="btn-lupa" onclick="abrirSidebar(this)">🔍</button>
-  <button class="btn-apagar" onclick="this.closest('.medicacao-box').remove();num()">APAGAR</button>
+  <button class="btn-apagar" onclick="this.closest('.medicacao-box').remove();numerar()">APAGAR</button>
  </div>
- <textarea class="med2"></textarea>`;
+ <textarea class="med2" placeholder="Tomar V.O"
+   oninput="this.value = capitalizarPrimeiraLetra(this.value)"></textarea>
+ `;
  document.getElementById("listaMedicacoes").appendChild(d);
- num();
+ numerar();
 }
-function num(){
+
+function numerar(){
  document.querySelectorAll(".num").forEach((e,i)=>e.textContent=(i+1)+")");
 }
 
@@ -134,7 +139,8 @@ function renderizarLista(f=""){
  const l=document.getElementById("listaSidebar");
  l.innerHTML="";
  let cat="";
- banco.filter(m=>(m.n+m.u).includes(f.toUpperCase())).forEach(m=>{
+ banco.filter(m=>(m.n+m.u).toLowerCase().includes(f.toLowerCase()))
+ .forEach(m=>{
   if(m.c!==cat){
     cat=m.c;
     const c=document.createElement("div");
@@ -146,8 +152,8 @@ function renderizarLista(f=""){
   i.className="item";
   i.innerHTML=`<strong>${m.n}</strong><br>${m.u}`;
   i.onclick=()=>{
-    campoAtual.querySelector(".med1").value=m.n;
-    campoAtual.querySelector(".med2").value=m.u;
+    campoAtual.querySelector(".med1").value = m.n;
+    campoAtual.querySelector(".med2").value = m.u;
     fecharSidebar();
   };
   l.appendChild(i);
@@ -158,6 +164,7 @@ function renderizarLista(f=""){
 async function gerarPDF(){
  const file=document.getElementById("pdfBase").files[0];
  if(!file) return alert("Selecione o PDF base.");
+
  const pdf=await PDFLib.PDFDocument.load(await file.arrayBuffer());
  const font=await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
  const p=pdf.getPages()[0];
