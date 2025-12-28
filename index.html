@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Preenchimento de Receita</title>
 
-<!-- PDF-LIB SEM DEFER -->
+<!-- PDF-LIB -->
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
 
 <style>
@@ -57,7 +57,6 @@ button{
   background:#e74c3c;
   padding:6px 10px;
 }
-
 .sidebar-topo button{
   background:#c0392b;
   padding:6px 10px;
@@ -67,7 +66,6 @@ button{
 .sidebar-busca{
   padding:8px;
 }
-
 .sidebar-busca input{
   padding:6px 8px;
   font-size:13px;
@@ -93,7 +91,6 @@ button{
   line-height:1.3;
   cursor:pointer;
 }
-
 .item:hover{background:#f0f0f0}
 </style>
 </head>
@@ -125,7 +122,7 @@ button{
 <div class="campo">
 <label>MEDICAÇÕES</label>
 <div id="listaMedicacoes"></div>
-<button class="btn-add" type="button" onclick="adicionarMedicacao()">➕ Adicionar Medicação</button>
+<button type="button" class="btn-add" onclick="adicionarMedicacao()">➕ Adicionar Medicação</button>
 </div>
 
 <div class="campo">
@@ -160,12 +157,16 @@ function cap(t){
  return t?t[0].toUpperCase()+t.slice(1):"";
 }
 
+/* BANCO DE MEDICAÇÕES */
 const banco=[
- {c:"❤️ Hipertensão / Cardiovascular",n:"Hidroclorotiazida 25mg – 60+60+60+60 CP",u:"Tomar 1 CP cedo e 1 CP à noite"},
- {c:"❤️ Hipertensão / Cardiovascular",n:"Losartana Potássica 50mg – 60+60+60+60 CP",u:"Tomar 1 CP cedo e 1 CP à noite"},
- {c:"❤️ Hipertensão / Cardiovascular",n:"Losartana Potássica 30mg – 60/60/60 CP",u:"Tomar 1 CP 12/12h"}
+{c:"❤️ Hipertensão / Cardiovascular",n:"Hidroclorotiazida 25mg – 60+60+60+60 CP",u:"Tomar 1 CP cedo e 1 CP à noite"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Losartana Potássica 50mg – 60+60+60+60 CP",u:"Tomar 1 CP cedo e 1 CP à noite"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Losartana Potássica 30mg – 60/60/60 CP",u:"Tomar 1 CP 12/12h"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Carvedilol 6,25mg – 60/60/60 CP",u:"Tomar 1 CP VO 12/12h"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Furosemida 40mg – 30/30/30 CP",u:"Tomar meio CP ao dia"}
 ];
 
+/* MEDICAÇÕES */
 function adicionarMedicacao(){
  if(document.querySelectorAll(".medicacao-box").length>=LIMITE)
   return alert("Limite máximo de 8 medicações.");
@@ -175,11 +176,11 @@ function adicionarMedicacao(){
  d.innerHTML=`
  <div class="medicacao-linha">
   <div class="num"></div>
-  <input class="med1" oninput="this.value=cap(this.value)">
+  <input class="med1" placeholder="Medicação" oninput="this.value=cap(this.value)">
   <button type="button" class="btn-lupa" onclick="abrirSidebar(this)">🔍</button>
   <button type="button" class="btn-apagar" onclick="this.closest('.medicacao-box').remove();numerar()">APAGAR</button>
  </div>
- <textarea class="med2" oninput="this.value=cap(this.value)"></textarea>`;
+ <textarea class="med2" placeholder="Uso" oninput="this.value=cap(this.value)"></textarea>`;
  document.getElementById("listaMedicacoes").appendChild(d);
  numerar();
 }
@@ -188,12 +189,12 @@ function numerar(){
  document.querySelectorAll(".num").forEach((e,i)=>e.textContent=(i+1)+")");
 }
 
+/* SIDEBAR */
 function abrirSidebar(btn){
  campoAtual=btn.closest(".medicacao-box");
  document.getElementById("sidebar").style.display="flex";
  renderizarLista();
 }
-
 function fecharSidebar(){
  document.getElementById("sidebar").style.display="none";
 }
@@ -223,18 +224,60 @@ function renderizarLista(f=""){
  });
 }
 
+/* GERAR PDF */
 async function gerarPDF(){
  const file=document.getElementById("pdfBase").files[0];
- if(!file) return alert("Selecione o PDF base.");
+ if(!file){
+  alert("Selecione o PDF base.");
+  return;
+ }
 
  const pdf=await PDFLib.PDFDocument.load(await file.arrayBuffer());
  const font=await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
  const p=pdf.getPages()[0];
 
+ /* NOME */
  p.drawText(nomePaciente.value,{x:188,y:1361.5,size:28,font});
  p.drawText(nomePaciente.value,{x:1370.25,y:1361.5,size:28,font});
 
- alert("PDF GERADO COM SUCESSO (teste)");
+ /* USO */
+ if(uso.value){
+  p.drawText(uso.value,{x:406.4,y:1150.64,size:25,font});
+  p.drawText(uso.value,{x:1587.4,y:1150.64,size:25,font});
+ }
+
+ /* MEDICAÇÕES */
+ let y=1009.17;
+ document.querySelectorAll(".medicacao-box").forEach((b,i)=>{
+  const t=`${i+1}) ${b.querySelector(".med1").value}\n${b.querySelector(".med2").value}`;
+  p.drawText(t,{x:157,y,size:25,font,lineHeight:30});
+  p.drawText(t,{x:1339.33,y,size:25,font,lineHeight:30});
+  y-=120;
+ });
+
+ /* DATA */
+ const d=dataDia.value,m=dataMes.value,a=dataAno.value;
+ if(d&&m&&a){
+  p.drawText(d,{x:878,y:171.83,size:25,font});
+  p.drawText(m,{x:933.5,y:171.83,size:25,font});
+  p.drawText(a,{x:990.5,y:171.83,size:25,font});
+
+  p.drawText(d,{x:2060.5,y:171.83,size:25,font});
+  p.drawText(m,{x:2117.5,y:171.83,size:25,font});
+  p.drawText(a,{x:2172,y:171.83,size:25,font});
+ }
+
+ const bytes=await pdf.save();
+ const blob=new Blob([bytes],{type:"application/pdf"});
+ const url=URL.createObjectURL(blob);
+
+ const aTag=document.createElement("a");
+ aTag.href=url;
+ aTag.download="receita.pdf";
+ document.body.appendChild(aTag);
+ aTag.click();
+ document.body.removeChild(aTag);
+ URL.revokeObjectURL(url);
 }
 </script>
 
