@@ -42,6 +42,14 @@ button{background:#27ae60;color:#fff;border:none;border-radius:6px;cursor:pointe
 .item{padding:6px;border-bottom:1px dashed #ccc;cursor:pointer}
 .item:hover{background:#f0f0f0}
 .close{background:#e74c3c;margin-bottom:10px}
+
+/* 🔍 AJUSTE DO TAMANHO DA BUSCA DA LISTAGEM */
+.sidebar input{
+  padding:8px;
+  font-size:14px;
+  height:38px;
+  border-radius:6px;
+}
 </style>
 </head>
 
@@ -116,49 +124,7 @@ const banco=[
 {c:"❤️ Hipertensão / Cardiovascular",n:"Digoxina 0,25mg – 30/30/30 CP",u:"Tomar meio CP ao dia"},
 {c:"❤️ Hipertensão / Cardiovascular",n:"AAS 100mg – 30/30/30 CP",u:"Tomar 1 CP após o almoço"},
 {c:"❤️ Hipertensão / Cardiovascular",n:"Sinvastatina 20mg – 30/30/30 CP",u:"Tomar meio CP ao dia"},
-{c:"❤️ Hipertensão / Cardiovascular",n:"Sinvastatina 20mg – 30/30/30 CP",u:"Tomar 1 CP ao dia"},
-{c:"🫁 Asma / Doenças respiratórias",n:"Aerolin Spray – 1 unidade",u:"Aspirar 2 jatos de 8/8h se falta de ar (máx. 8 jatos/dia)"},
-{c:"🫁 Asma / Doenças respiratórias",n:"Clenil HFA 250 – Uso contínuo",u:"Aspirar 1 jato de 12/12h"},
-{c:"🫁 Asma / Doenças respiratórias",n:"Xarope de Guaco – 2 frascos",u:"Tomar 10 ml de 8/8h"},
-{c:"🤧 Antialérgicos",n:"Dexclorfeniramina 2mg – 20 CP",u:"Tomar 1 CP de 8/8h"},
-{c:"🤧 Antialérgicos",n:"Dexclorfeniramina – 2 frascos",u:"Tomar 10 ml de 8/8h"},
-{c:"🤧 Antialérgicos",n:"Dexclorfeniramina – 2 frascos",u:"Tomar 5 ml VO de 8/8h"},
-{c:"💊 Dor / Febre / Analgésicos / Anti-inflamatórios",n:"Dipirona – 2 frascos",u:"Tomar 40 gotas de 6/6h"},
-{c:"💊 Dor / Febre / Analgésicos / Anti-inflamatórios",n:"Dipirona – 2 frascos",u:"Tomar 30 gotas de 6/6h se dor ou febre"},
-{c:"💊 Dor / Febre / Analgésicos / Anti-inflamatórios",n:"Paracetamol 500mg – 24 CP",u:"Tomar 1 CP VO de 6/6h"},
-{c:"💊 Dor / Febre / Analgésicos / Anti-inflamatórios",n:"Ibuprofeno 600mg – 21 CP",u:"Tomar 1 CP VO de 8/8h"},
-{c:"🦠 Antibióticos (uso sistêmico)",n:"Amoxicilina 500mg – 30 CP",u:"Tomar 2 CP de 8/8h"},
-{c:"🦠 Antibióticos (uso sistêmico)",n:"Amoxicilina + Clavulanato 500 + 125mg",u:"Tomar 1 CP de 8/8h por 7 dias"},
-{c:"🦠 Antibióticos (uso sistêmico)",n:"Azitromicina 500mg – 5 CP",u:"Tomar 1 CP ao dia por 5 dias"},
-{c:"🦠 Antibióticos (uso sistêmico)",n:"Sulfametoxazol + Trimetoprima 400/80mg – 30 CP (uso contínuo)",u:"Tomar 2 CP às segundas, quartas e sextas"},
-{c:"🦠 Antibióticos (uso sistêmico)",n:"Sulfametoxazol + Trimetoprima 200mg + 40mg",u:"Tomar 10 ml de 12/12h por 10 dias"},
-{c:"🦠 Antibióticos (uso sistêmico)",n:"Nitrofurantoína 100mg – 30 CP",u:"Tomar 1 CP ao dia"},
-{c:"🦠 Antibióticos (uso sistêmico)",n:"Nitrofurantoína 100mg – 56 CP",u:"Tomar 1 CP ao dia"},
-{c:"🦠 Antifúngicos / Ginecológicos",n:"Miconazol 20mg pomada – 2 tubos",u:"Aplicar 3 vezes ao dia nas lesões"},
-{c:"🦠 Antifúngicos / Ginecológicos",n:"Nistatina creme vaginal 25.000 UI/g – 1 bisnaga (60g)",u:"Aplicar 1 dose vaginal à noite por 14 dias"},
-{c:"🦠 Antifúngicos / Ginecológicos",n:"Nistatina suspensão 100.000 UI/ml",u:"Tomar VO 3 vezes ao dia por 7 dias"},
-{c:"🦠 Antifúngicos / Ginecológicos",n:"Tinidazol + Nitrato de Miconazol 30mg/g + 20mg/g – 1 tubo",u:"Aplicar 1 vez à noite antes de dormir por 7 dias"},
-{c:"🧴 Pomadas / Uso tópico dermatológico",n:"Bacitracina + Neomicina – 2 tubos",u:"Aplicar 3 vezes ao dia"},
-{c:"🧴 Pomadas / Uso tópico dermatológico",n:"Creme de Própolis – 2 tubos",u:"Aplicar 3 vezes ao dia"},
-{c:"🧴 Pomadas / Uso tópico dermatológico",n:"Vitamina A + Vitamina D + Óxido de Zinco – 3 tubos",u:"Aplicar a cada troca de fralda"},
-{c:"🧴 Pomadas / Uso tópico dermatológico",n:"Rifasan Spray 10mg/ml",u:"Pulverizar a área afetada a cada 8 horas"},
-{c:"🧠 Neurológicos / Psiquiátricos",n:"Amitriptilina 25mg – 30+30 CP",u:"Tomar 1 CP VO à noite"},
-{c:"🧠 Neurológicos / Psiquiátricos",n:"Citalopram 20mg – 60+60 CP",u:"Tomar 2 CP ao dia"},
-{c:"🧠 Neurológicos / Psiquiátricos",n:"Pregabalina 50mg – 180 CP",u:"Tomar 2 CP VO de 12/12h"},
-{c:"🧬 Endócrinos / Metabólicos",n:"Levotiroxina 50mg – 30/30/30 CP",u:"Tomar 1 CP cedo em jejum"},
-{c:"🧬 Endócrinos / Metabólicos",n:"Glifage XR 500mg",u:"Tomar 1 CP VO após almoço e 1 após jantar"},
-{c:"🍽️ Gastrointestinais",n:"Omeprazol 20mg – 30/30/30 CP",u:"Tomar 1 CP cedo em jejum"},
-{c:"🍽️ Gastrointestinais",n:"Bromoprida – 2 frascos",u:"Tomar 40 gotas de 8/8h se náuseas ou vômitos"},
-{c:"🛡️ Corticoides",n:"Prednisona 20mg – 30 CP",u:"Tomar 1 CP VO 1x ao dia por 30 dias"},
-{c:"🛡️ Corticoides",n:"Prednisona 20mg – 90+90 CP",u:"Tomar 3 CP cedo"},
-{c:"🛡️ Corticoides",n:"Dexametasona 4mg – 40 CP",u:"Tomar 5 CP no café da manhã e 5 no almoço"},
-{c:"🩸 Hematológicos / Vasculares",n:"Sulfato Ferroso 40mg – 60 CP",u:"Tomar 1 CP VO antes do almoço"},
-{c:"🩸 Hematológicos / Vasculares",n:"Diosmina + Hesperidina 450mg + 50mg – 60+60+60 CP",u:"Tomar 1 CP de 12/12h por 3 meses"},
-{c:"💊 Vitaminas",n:"Complexo B 30mg – 30/30/30 CP",u:"Tomar 1 CP ao dia"},
-{c:"Medicações recém adicionadas",n:"Dipirona 500mg",u:"Tomar 1 CP VO 6/6h se dor por até 5 dias"},
-{c:"Medicações recém adicionadas",n:"Nistatina suspensão 100.000 UI/ml",u:"Tomar VO 3 vezes ao dia por 7 dias"},
-{c:"Medicações recém adicionadas",n:"Omeprazol 20mg – 30/30/30 CP",u:"Tomar 1 CP pela manhã"},
-{c:"Medicações recém adicionadas",n:"Alopurinol 300mg – 30 CP",u:"Tomar 1 CP 1 vez ao dia"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Sinvastatina 20mg – 30/30/30 CP",u:"Tomar 1 CP ao dia"}
 ];
 
 /* MEDICAÇÕES */
@@ -227,17 +193,14 @@ async function gerarPDF(){
  const font=await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
  const p=pdf.getPages()[0];
 
- /* NOME */
  p.drawText(nomePaciente.value,{x:188,y:1361.5,size:28,font});
  p.drawText(nomePaciente.value,{x:1370.25,y:1361.5,size:28,font});
 
- /* USO */
  if(uso.value){
   p.drawText(uso.value,{x:406.4,y:1150.64,size:25,font});
   p.drawText(uso.value,{x:1587.4,y:1150.64,size:25,font});
  }
 
- /* MEDICAÇÕES */
  let y=1009.17;
  document.querySelectorAll(".medicacao-box").forEach((b,i)=>{
   const t=`${i+1}) ${b.querySelector(".med1").value}\n${b.querySelector(".med2").value}`;
@@ -246,7 +209,6 @@ async function gerarPDF(){
   y-=120;
  });
 
- /* DATA */
  const d=dataDia.value,m=dataMes.value,a=dataAno.value;
  if(d&&m&&a){
   p.drawText(d,{x:878,y:171.83,size:25,font});
