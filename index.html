@@ -152,9 +152,7 @@ button{
 const LIMITE = 8;
 let campoAtual = null;
 
-/* 🔧 FUNÇÃO CORRIGIDA
-   Permite digitar MAIÚSCULO normalmente
-   Apenas garante a primeira letra maiúscula */
+/* Primeira letra maiúscula sem travar CAPS */
 function cap(t){
  if(!t) return "";
  return t[0].toUpperCase() + t.slice(1);
@@ -289,9 +287,18 @@ async function gerarPDF(){
  const font=await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
  const p=pdf.getPages()[0];
 
- p.drawText(nomePaciente.value,{x:188,y:1361.5,size:28,font});
- p.drawText(nomePaciente.value,{x:1370.25,y:1361.5,size:28,font});
+ /* NOME */
+ p.drawText(document.getElementById("nomePaciente").value,{x:188,y:1361.5,size:28,font});
+ p.drawText(document.getElementById("nomePaciente").value,{x:1370.25,y:1361.5,size:28,font});
 
+ /* ✅ USO CORRIGIDO */
+ const usoValor = document.getElementById("uso").value;
+ if(usoValor){
+  p.drawText(usoValor,{x:406.4,y:1150.64,size:28,font});
+  p.drawText(usoValor,{x:1587.4,y:1150.64,size:28,font});
+ }
+
+ /* MEDICAÇÕES */
  let y=1009.17;
  document.querySelectorAll(".medicacao-box").forEach((b,i)=>{
   const t=`${i+1}) ${b.querySelector(".med1").value}\n${b.querySelector(".med2").value}`;
@@ -300,13 +307,28 @@ async function gerarPDF(){
   y-=120;
  });
 
+ /* DATA */
+ const d = document.getElementById("dataDia").value;
+ const m = document.getElementById("dataMes").value;
+ const a = document.getElementById("dataAno").value;
+
+ if(d && m && a){
+  p.drawText(d,{x:878,y:171.83,size:28,font});
+  p.drawText(m,{x:933.5,y:171.83,size:28,font});
+  p.drawText(a,{x:990.5,y:171.83,size:28,font});
+
+  p.drawText(d,{x:2060.5,y:171.83,size:28,font});
+  p.drawText(m,{x:2117.5,y:171.83,size:28,font});
+  p.drawText(a,{x:2172,y:171.83,size:28,font});
+ }
+
  const bytes=await pdf.save();
  const blob=new Blob([bytes],{type:"application/pdf"});
- const a=document.createElement("a");
- a.href=URL.createObjectURL(blob);
- a.download="receita.pdf";
- a.click();
- URL.revokeObjectURL(a.href);
+ const aTag=document.createElement("a");
+ aTag.href=URL.createObjectURL(blob);
+ aTag.download="receita.pdf";
+ aTag.click();
+ URL.revokeObjectURL(aTag.href);
 }
 </script>
 
