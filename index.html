@@ -91,7 +91,7 @@ button{padding:12px;font-size:16px;border:none;border-radius:6px;cursor:pointer;
 const LIMITE = 8;
 let campoAtual = null;
 
-/* 🔹 LOCALSTORAGE */
+/* LOCALSTORAGE */
 const LS_KEY = "medicacoesExtras";
 
 /* Primeira letra maiúscula */
@@ -100,12 +100,12 @@ function cap(t){
  return t[0].toUpperCase() + t.slice(1);
 }
 
-/* BANCO ORIGINAL */
+/* BANCO BASE (não muda) */
 const bancoBase = [
  {c:"💊 Vitaminas",n:"Complexo B 30mg – 30/30/30 CP",u:"Tomar 1 CP ao dia"}
 ];
 
-/* 🔹 LOCALSTORAGE: carregar extras */
+/* Carregar banco completo */
 function carregarBanco(){
  const extras = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
  return [...bancoBase, ...extras];
@@ -113,7 +113,7 @@ function carregarBanco(){
 
 let banco = carregarBanco();
 
-/* 🔹 LOCALSTORAGE: salvar novas */
+/* Salvar novas medicações */
 function salvarMedicacoesNovas(){
  const extras = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
 
@@ -205,20 +205,24 @@ async function gerarPDF(){
  const font=await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
  const p=pdf.getPages()[0];
 
- p.drawText(nomePaciente.value,{x:188,y:1361.5,size:28,font});
- p.drawText(nomePaciente.value,{x:1370.25,y:1361.5,size:28,font});
+ /* NOME */
+ const nome=document.getElementById("nomePaciente").value;
+ p.drawText(nome,{x:188,y:1361.5,size:28,font});
+ p.drawText(nome,{x:1370.25,y:1361.5,size:28,font});
 
- const uso=usoValor=uso.value;
- if(uso){
-  p.drawText(uso,{x:406.4,y:1150.64,size:28,font});
-  p.drawText(uso,{x:1587.4,y:1150.64,size:28,font});
+ /* USO */
+ const usoValor=document.getElementById("uso").value;
+ if(usoValor){
+  p.drawText(usoValor,{x:406.4,y:1150.64,size:28,font});
+  p.drawText(usoValor,{x:1587.4,y:1150.64,size:28,font});
  }
 
+ /* MEDICAÇÕES */
  let y=1009.17;
  document.querySelectorAll(".medicacao-box").forEach((b,i)=>{
-  const t=`${i+1}) ${b.querySelector(".med1").value}\n${b.querySelector(".med2").value}`;
-  p.drawText(t,{x:157,y,size:28,font,lineHeight:30});
-  p.drawText(t,{x:1339.33,y,size:28,font,lineHeight:30});
+  const texto=`${i+1}) ${b.querySelector(".med1").value}\n${b.querySelector(".med2").value}`;
+  p.drawText(texto,{x:157,y,size:28,font,lineHeight:30});
+  p.drawText(texto,{x:1339.33,y,size:28,font,lineHeight:30});
   y-=120;
  });
 
@@ -228,6 +232,7 @@ async function gerarPDF(){
  a.href=URL.createObjectURL(blob);
  a.download="receita.pdf";
  a.click();
+ URL.revokeObjectURL(a.href);
 }
 </script>
 
