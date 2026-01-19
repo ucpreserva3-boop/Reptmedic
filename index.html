@@ -17,10 +17,7 @@
 body{margin:0;font-family:Arial,sans-serif;background:#f4f4f4}
 
 /* LOGIN */
-#login{
- max-width:380px;margin:120px auto;background:#fff;
- padding:20px;border-radius:8px
-}
+#login{max-width:380px;margin:120px auto;background:#fff;padding:20px;border-radius:8px}
 #login h2{text-align:center;margin-bottom:16px}
 #login input{margin-bottom:10px;width:100%;padding:10px}
 #erro{color:red;text-align:center}
@@ -53,10 +50,7 @@ button{
 .data-box input{text-align:center}
 
 /* SIDEBAR */
-.sidebar{
- position:fixed;inset:0;background:#fff;z-index:999;
- display:none;flex-direction:column
-}
+.sidebar{position:fixed;inset:0;background:#fff;z-index:999;display:none;flex-direction:column}
 .sidebar-topo{background:#e74c3c;padding:6px 10px}
 .sidebar-topo button{background:#c0392b;padding:6px 10px;font-size:14px}
 .sidebar-busca{padding:8px}
@@ -144,56 +138,54 @@ const auth = firebase.auth();
 const db   = firebase.firestore();
 
 /* 🔐 LOGIN */
-document.getElementById("btnLogin").onclick = () => {
- const email = document.getElementById("email").value.trim();
- const senha = document.getElementById("senha").value.trim();
- const erro  = document.getElementById("erro");
-
+btnLogin.onclick = () => {
  erro.innerText = "";
-
- if(!email || !senha){
+ if(!email.value || !senha.value){
   erro.innerText = "Preencha email e senha.";
   return;
  }
-
- auth.signInWithEmailAndPassword(email, senha)
-  .catch(() => erro.innerText = "Email ou senha inválidos.");
+ auth.signInWithEmailAndPassword(email.value, senha.value)
+  .catch(()=> erro.innerText="Email ou senha inválidos.");
 };
 
-function logout(){
- auth.signOut();
-}
+function logout(){ auth.signOut(); }
 
-/* CONTROLE DE ACESSO */
 auth.onAuthStateChanged(user=>{
- document.getElementById("login").style.display = user ? "none" : "block";
- document.getElementById("app").style.display   = user ? "block" : "none";
+ login.style.display = user ? "none" : "block";
+ app.style.display   = user ? "block" : "none";
+ if(user) carregarMedicacoes();
 });
 
-/* ===== APP ===== */
+/* ===== MEDICAÇÕES ===== */
 const LIMITE = 8;
 let campoAtual = null;
-function cap(t){return t?t[0].toUpperCase()+t.slice(1):""}
+let banco = [];
 
-/* LISTA LOCAL (sidebar) */
-const banco = [];
+function cap(t){ return t ? t[0].toUpperCase()+t.slice(1) : ""; }
 
-/* MEDICAÇÕES */
+/* 🔄 CARREGAR MEDICAÇÕES DO FIRESTORE */
+async function carregarMedicacoes(){
+ banco = [];
+ const snap = await db.collection("medicacoes").orderBy("categoria").get();
+ snap.forEach(doc => banco.push(doc.data()));
+}
+
+/* ➕ ADICIONAR CAMPO */
 function adicionarMedicacao(){
  if(document.querySelectorAll(".medicacao-box").length >= LIMITE)
   return alert("Limite máximo de 8 medicações.");
 
  const d = document.createElement("div");
- d.className = "medicacao-box";
- d.innerHTML = `
+ d.className="medicacao-box";
+ d.innerHTML=`
  <div class="medicacao-linha">
   <div class="num"></div>
-  <input class="med1" placeholder="Medicação">
+  <input class="med1" placeholder="Medicação" oninput="this.value=cap(this.value)">
   <button class="btn-lupa" onclick="abrirSidebar(this)">🔍</button>
   <button class="btn-apagar" onclick="this.closest('.medicacao-box').remove();numerar()">APAGAR</button>
  </div>
- <textarea class="med2" placeholder="Uso"></textarea>`;
- document.getElementById("listaMedicacoes").appendChild(d);
+ <textarea class="med2" placeholder="Uso" oninput="this.value=cap(this.value)"></textarea>`;
+ listaMedicacoes.appendChild(d);
  numerar();
 }
 
@@ -201,19 +193,42 @@ function numerar(){
  document.querySelectorAll(".num").forEach((e,i)=>e.textContent=(i+1)+")");
 }
 
+/* 🔍 SIDEBAR */
 function abrirSidebar(btn){
  campoAtual = btn.closest(".medicacao-box");
- document.getElementById("sidebar").style.display = "flex";
+ sidebar.style.display="flex";
+ renderizarLista();
+}
+function fecharSidebar(){ sidebar.style.display="none"; }
+
+function renderizarLista(f=""){
+ listaSidebar.innerHTML="";
+ let cat="";
+ banco
+ .filter(m => (m.nome+m.uso).toLowerCase().includes(f.toLowerCase()))
+ .forEach(m=>{
+  if(m.categoria !== cat){
+   cat = m.categoria;
+   const c = document.createElement("div");
+   c.className="categoria";
+   c.textContent = m.categoria;
+   listaSidebar.appendChild(c);
+  }
+  const i = document.createElement("div");
+  i.className="item";
+  i.innerHTML=`<strong>${m.nome}</strong><br>${m.uso}`;
+  i.onclick=()=>{
+   campoAtual.querySelector(".med1").value = m.nome;
+   campoAtual.querySelector(".med2").value = m.uso;
+   fecharSidebar();
+  };
+  listaSidebar.appendChild(i);
+ });
 }
 
-function fecharSidebar(){
- document.getElementById("sidebar").style.display = "none";
-}
-
-/* 🔥 SALVAR NOVAS MEDICAÇÕES NO FIRESTORE */
+/* 🔥 SALVAR NOVAS MEDICAÇÕES */
 async function salvarMedicacoesNoFirestore(){
  const boxes = document.querySelectorAll(".medicacao-box");
-
  for(const b of boxes){
   const nome = b.querySelector(".med1").value.trim();
   const uso  = b.querySelector(".med2").value.trim();
@@ -228,17 +243,18 @@ async function salvarMedicacoesNoFirestore(){
    await db.collection("medicacoes").add({
     nome,
     uso,
-    categoria: "⭐ Adicionadas pelos usuários"
+    categoria:"⭐ Adicionadas pelos usuários"
    });
   }
  }
+ await carregarMedicacoes();
 }
 
-/* 📄 PDF */
+/* 📄 GERAR PDF */
 async function gerarPDF(){
  await salvarMedicacoesNoFirestore();
 
- const file = document.getElementById("pdfBase").files[0];
+ const file = pdfBase.files[0];
  if(!file) return alert("Selecione o PDF base.");
 
  const pdf  = await PDFLib.PDFDocument.load(await file.arrayBuffer());
@@ -248,18 +264,18 @@ async function gerarPDF(){
  p.drawText(nomePaciente.value,{x:188,y:1361.5,size:28,font});
  p.drawText(nomePaciente.value,{x:1370.25,y:1361.5,size:28,font});
 
- let y = 1009;
+ let y=1009;
  document.querySelectorAll(".medicacao-box").forEach((b,i)=>{
-  const t = `${i+1}) ${b.querySelector(".med1").value}\n${b.querySelector(".med2").value}`;
+  const t=`${i+1}) ${b.querySelector(".med1").value}\n${b.querySelector(".med2").value}`;
   p.drawText(t,{x:157,y,size:28,font,lineHeight:30});
-  y -= 120;
+  y-=120;
  });
 
  const bytes = await pdf.save();
  const blob  = new Blob([bytes],{type:"application/pdf"});
- const a     = document.createElement("a");
+ const a = document.createElement("a");
  a.href = URL.createObjectURL(blob);
- a.download = "receita.pdf";
+ a.download="receita.pdf";
  a.click();
 }
 </script>
