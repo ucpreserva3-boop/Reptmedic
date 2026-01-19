@@ -17,9 +17,9 @@
 body{margin:0;font-family:Arial,sans-serif;background:#f4f4f4}
 
 /* LOGIN */
-#login{max-width:380px;margin:120px auto;background:#fff;padding:20px;border-radius:8px}
-#login h2{text-align:center;margin-bottom:16px}
-#login input{width:100%;padding:10px;margin-bottom:10px}
+#loginBox{max-width:380px;margin:120px auto;background:#fff;padding:20px;border-radius:8px}
+#loginBox h2{text-align:center;margin-bottom:16px}
+#loginBox input{width:100%;padding:10px;margin-bottom:10px}
 #erro{color:red;text-align:center}
 
 /* APP */
@@ -65,11 +65,11 @@ button{
 <body>
 
 <!-- 🔐 LOGIN -->
-<div id="login">
+<div id="loginBox">
 <h2>Acesso restrito</h2>
 <input id="email" type="email" placeholder="Email">
 <input id="senha" type="password" placeholder="Senha">
-<button onclick="login()">Entrar</button>
+<button onclick="fazerLogin()">Entrar</button>
 <p id="erro"></p>
 </div>
 
@@ -141,24 +141,32 @@ firebase.initializeApp({
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-/* LOGIN */
-function login(){
- erro.innerText="";
- auth.signInWithEmailAndPassword(email.value.trim(), senha.value.trim())
-  .catch(e=>erro.innerText=e.message);
+/* 🔐 LOGIN CORRIGIDO */
+function fazerLogin(){
+ const email = document.getElementById("email").value.trim();
+ const senha = document.getElementById("senha").value.trim();
+ const erro  = document.getElementById("erro");
+
+ erro.innerText = "";
+
+ auth.signInWithEmailAndPassword(email, senha)
+  .catch(e => erro.innerText = e.message);
 }
-function logout(){auth.signOut();}
+
+function logout(){
+ auth.signOut();
+}
 
 auth.onAuthStateChanged(user=>{
- login.style.display = user ? "none" : "block";
- app.style.display   = user ? "block" : "none";
+ document.getElementById("loginBox").style.display = user ? "none" : "block";
+ document.getElementById("app").style.display      = user ? "block" : "none";
  if(user) carregarMedicacoes();
 });
 
 /* ===== SISTEMA ===== */
-const LIMITE=8;
-let campoAtual=null;
-let banco=[];
+const LIMITE = 8;
+let campoAtual = null;
+let banco = [];
 
 function cap(t){return t?t[0].toUpperCase()+t.slice(1):""}
 
@@ -177,7 +185,7 @@ function adicionarMedicacao(){
   <button class="btn-apagar" onclick="this.closest('.medicacao-box').remove();numerar()">APAGAR</button>
  </div>
  <textarea class="med2" placeholder="Uso" oninput="this.value=cap(this.value)"></textarea>`;
- listaMedicacoes.appendChild(d);
+ document.getElementById("listaMedicacoes").appendChild(d);
  numerar();
 }
 
@@ -188,10 +196,12 @@ function numerar(){
 /* SIDEBAR */
 function abrirSidebar(btn){
  campoAtual=btn.closest(".medicacao-box");
- sidebar.style.display="flex";
+ document.getElementById("sidebar").style.display="flex";
  renderizarLista();
 }
-function fecharSidebar(){sidebar.style.display="none";}
+function fecharSidebar(){
+ document.getElementById("sidebar").style.display="none";
+}
 
 /* FIRESTORE */
 async function carregarMedicacoes(){
@@ -200,7 +210,8 @@ async function carregarMedicacoes(){
 }
 
 function renderizarLista(f=""){
- listaSidebar.innerHTML="";
+ const lista = document.getElementById("listaSidebar");
+ lista.innerHTML="";
  let cat="";
  banco.filter(m=>(m.nome+m.uso).toLowerCase().includes(f.toLowerCase()))
  .forEach(m=>{
@@ -209,7 +220,7 @@ function renderizarLista(f=""){
    const c=document.createElement("div");
    c.className="categoria";
    c.textContent=cat;
-   listaSidebar.appendChild(c);
+   lista.appendChild(c);
   }
   const i=document.createElement("div");
   i.className="item";
@@ -219,7 +230,7 @@ function renderizarLista(f=""){
    campoAtual.querySelector(".med2").value=m.uso;
    fecharSidebar();
   };
-  listaSidebar.appendChild(i);
+  lista.appendChild(i);
  });
 }
 
@@ -237,7 +248,7 @@ async function salvarNovasMedicacoes(){
 
   if(q.empty){
    await db.collection("medicacoes").add({
-    nome,uso,categoria:"⭐ Adicionadas pelos usuários"
+    nome, uso, categoria:"⭐ Adicionadas pelos usuários"
    });
   }
  }
@@ -247,15 +258,15 @@ async function salvarNovasMedicacoes(){
 async function gerarPDF(){
  await salvarNovasMedicacoes();
 
- const file=pdfBase.files[0];
+ const file=document.getElementById("pdfBase").files[0];
  if(!file) return alert("Selecione o PDF base.");
 
  const pdf=await PDFLib.PDFDocument.load(await file.arrayBuffer());
  const font=await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
  const p=pdf.getPages()[0];
 
- p.drawText(nomePaciente.value,{x:188,y:1361.5,size:28,font});
- p.drawText(nomePaciente.value,{x:1370.25,y:1361.5,size:28,font});
+ p.drawText(document.getElementById("nomePaciente").value,{x:188,y:1361.5,size:28,font});
+ p.drawText(document.getElementById("nomePaciente").value,{x:1370.25,y:1361.5,size:28,font});
 
  let y=1009;
  document.querySelectorAll(".medicacao-box").forEach((b,i)=>{
