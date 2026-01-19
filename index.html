@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Preenchimento de Receita</title>
 
+<!-- PDF-LIB -->
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
 
 <style>
@@ -13,24 +14,83 @@ body{margin:0;font-family:Arial,sans-serif;background:#f4f4f4}
 h1{text-align:center;margin-bottom:20px}
 .campo{margin-bottom:16px}
 label{font-weight:bold;display:block;margin-bottom:6px}
-input,select,textarea{width:100%;padding:12px;font-size:16px;box-sizing:border-box}
-button{padding:12px;font-size:16px;border:none;border-radius:6px;cursor:pointer;background:#27ae60;color:#fff}
+
+input,select,textarea{
+  width:100%;
+  padding:12px;
+  font-size:16px;
+  box-sizing:border-box
+}
+
+button{
+  padding:12px;
+  font-size:16px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  background:#27ae60;
+  color:#fff;
+}
+
 .medicacao-box{background:#fff;border:1px solid #ccc;padding:10px;margin-bottom:10px}
 .medicacao-linha{display:flex;gap:6px;align-items:center}
 .num{width:32px;font-weight:bold;text-align:center}
 .btn-apagar{background:#e74c3c}
 .btn-lupa{background:#34495e}
 .btn-add{background:#2980b9;margin-top:8px}
+
+/* DATA */
 .data-box{display:flex;gap:10px}
 .data-box input{text-align:center}
-.sidebar{position:fixed;inset:0;background:#fff;z-index:999;display:none;flex-direction:column}
-.sidebar-topo{background:#e74c3c;padding:6px 10px}
-.sidebar-topo button{background:#c0392b;padding:6px 10px;font-size:14px}
-.sidebar-busca{padding:8px}
-.sidebar-busca input{padding:6px 8px;font-size:13px;height:32px}
-.sidebar-lista{flex:1;overflow-y:auto;padding:6px 8px}
-.categoria{font-weight:bold;margin:10px 0 4px;font-size:14px}
-.item{padding:6px 4px;border-bottom:1px dashed #ccc;font-size:14px;cursor:pointer}
+
+/* SIDEBAR */
+.sidebar{
+  position:fixed;
+  inset:0;
+  background:#fff;
+  z-index:999;
+  display:none;
+  flex-direction:column;
+}
+
+.sidebar-topo{
+  background:#e74c3c;
+  padding:6px 10px;
+}
+.sidebar-topo button{
+  background:#c0392b;
+  padding:6px 10px;
+  font-size:14px;
+}
+
+.sidebar-busca{
+  padding:8px;
+}
+.sidebar-busca input{
+  padding:6px 8px;
+  font-size:13px;
+  height:32px;
+}
+
+.sidebar-lista{
+  flex:1;
+  overflow-y:auto;
+  padding:6px 8px;
+}
+
+.categoria{
+  font-weight:bold;
+  margin:10px 0 4px;
+  font-size:14px;
+}
+
+.item{
+  padding:6px 4px;
+  border-bottom:1px dashed #ccc;
+  font-size:14px;
+  line-height:1.3;
+  cursor:pointer;
+}
 .item:hover{background:#f0f0f0}
 </style>
 </head>
@@ -77,64 +137,94 @@ button{padding:12px;font-size:16px;border:none;border-radius:6px;cursor:pointer;
 <button type="button" onclick="gerarPDF()">📄 Gerar PDF</button>
 </div>
 
+<!-- SIDEBAR -->
 <div id="sidebar" class="sidebar">
- <div class="sidebar-topo">
-  <button onclick="fecharSidebar()">Fechar</button>
- </div>
- <div class="sidebar-busca">
-  <input placeholder="Buscar..." oninput="renderizarLista(this.value)">
- </div>
- <div id="listaSidebar" class="sidebar-lista"></div>
+  <div class="sidebar-topo">
+    <button type="button" onclick="fecharSidebar()">Fechar</button>
+  </div>
+  <div class="sidebar-busca">
+    <input placeholder="Buscar..." oninput="renderizarLista(this.value)">
+  </div>
+  <div id="listaSidebar" class="sidebar-lista"></div>
 </div>
 
 <script>
 const LIMITE = 8;
 let campoAtual = null;
 
-/* LOCALSTORAGE */
-const LS_KEY = "medicacoesExtras";
-
-/* Primeira letra maiúscula */
+/* Primeira letra maiúscula sem travar CAPS */
 function cap(t){
  if(!t) return "";
  return t[0].toUpperCase() + t.slice(1);
 }
 
-/* BANCO BASE (não muda) */
-const bancoBase = [
- {c:"💊 Vitaminas",n:"Complexo B 30mg – 30/30/30 CP",u:"Tomar 1 CP ao dia"}
+/* BANCO DE MEDICAÇÕES */
+const banco=[
+{c:"❤️ Hipertensão / Cardiovascular",n:"Hidroclorotiazida 25mg – 60+60+60+60 CP",u:"Tomar 1 CP cedo e 1 CP à noite"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Losartana Potássica 50mg – 60+60+60+60 CP",u:"Tomar 1 CP cedo e 1 CP à noite"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Losartana Potássica 30mg – 60/60/60 CP",u:"Tomar 1 CP 12/12h"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Carvedilol 6,25mg – 60/60/60 CP",u:"Tomar 1 CP VO 12/12h"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Furosemida 40mg – 30/30/30 CP",u:"Tomar meio CP ao dia"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Hidroclorotiazida 25mg – 60+60+60+60 CP",u:"Tomar 1 CP cedo e 1 CP à noite"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Losartana Potássica 50mg – 60+60+60+60 CP",u:"Tomar 1 CP cedo e 1 CP à noite"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Losartana Potássica 30mg – 60/60/60 CP",u:"Tomar 1 CP 12/12h"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Carvedilol 6,25mg – 60/60/60 CP",u:"Tomar 1 CP VO 12/12h"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Furosemida 40mg – 30/30/30 CP",u:"Tomar meio CP ao dia"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Espironolactona 25mg – 30/30/30 CP",u:"Tomar 1 CP cedo"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Espironolactona 25mg – 60 CP",u:"Tomar 1 CP pela manhã e 1 CP à noite"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Digoxina 0,25mg – 30/30/30 CP",u:"Tomar meio CP ao dia"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"AAS 100mg – 30/30/30 CP",u:"Tomar 1 CP após o almoço"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Sinvastatina 20mg – 30/30/30 CP",u:"Tomar meio CP ao dia"},
+{c:"❤️ Hipertensão / Cardiovascular",n:"Sinvastatina 20mg – 30/30/30 CP",u:"Tomar 1 CP ao dia"},
+{c:"🫁 Asma / Doenças respiratórias",n:"Aerolin Spray – 1 unidade",u:"Aspirar 2 jatos de 8/8h se falta de ar (máx. 8 jatos/dia)"},
+{c:"🫁 Asma / Doenças respiratórias",n:"Clenil HFA 250 – Uso contínuo",u:"Aspirar 1 jato de 12/12h"},
+{c:"🫁 Asma / Doenças respiratórias",n:"Xarope de Guaco – 2 frascos",u:"Tomar 10 ml de 8/8h"},
+{c:"🤧 Antialérgicos",n:"Dexclorfeniramina 2mg – 20 CP",u:"Tomar 1 CP de 8/8h"},
+{c:"🤧 Antialérgicos",n:"Dexclorfeniramina 2mg – 40 CP",u:"Tomar 1 CP de 8/8h"},
+{c:"🤧 Antialérgicos",n:"Dexclorfeniramina – 2 frascos",u:"Tomar 10 ml de 8/8h"},
+{c:"🤧 Antialérgicos",n:"Dexclorfeniramina – 2 frascos",u:"Tomar 5 ml VO de 8/8h"},
+{c:"💊 Dor / Febre / Analgésicos / Anti-inflamatórios",n:"Dipirona – 2 frascos",u:"Tomar 40 gotas de 6/6h"},
+{c:"💊 Dor / Febre / Analgésicos / Anti-inflamatórios",n:"Dipirona – 2 frascos",u:"Tomar 30 gotas de 6/6h se dor ou febre"},
+{c:"💊 Dor / Febre / Analgésicos / Anti-inflamatórios",n:"Paracetamol 500mg – 24 CP",u:"Tomar 1 CP VO de 6/6h"},
+{c:"💊 Dor / Febre / Analgésicos / Anti-inflamatórios",n:"Ibuprofeno 600mg – 21 CP",u:"Tomar 1 CP VO de 8/8h"},
+{c:"💊 Dor / Febre / Analgésicos / Anti-inflamatórios",n:"Ibuprofeno 50mg/ml - 2 frascos",u:"Tomar 40gts VO de 8/8h"},
+{c:"🦠 Antibióticos (uso sistêmico)",n:"Amoxicilina 500mg – 30 CP",u:"Tomar 1 CP de 8/8h"},
+{c:"🦠 Antibióticos (uso sistêmico)",n:"Amoxicilina + Clavulanato 500 + 125mg",u:"Tomar 1 CP de 8/8h por 7 dias"},
+{c:"🦠 Antibióticos (uso sistêmico)",n:"Amoxicilina + Clavulanato 500 + 125mg",u:"Tomar 1 CP de 8/8h por 10 dias"},
+{c:"🦠 Antibióticos (uso sistêmico)",n:"Azitromicina 500mg – 5 CP",u:"Tomar 1 CP ao dia por 5 dias"},
+{c:"🦠 Antibióticos (uso sistêmico)",n:"Sulfametoxazol + Trimetoprima 200mg + 40mg",u:"Tomar 10 ml de 12/12h por 10 dias"},
+{c:"🦠 Antibióticos (uso sistêmico)",n:"Nitrofurantoína 100mg – 30 CP",u:"Tomar 1 CP ao dia"},
+{c:"🦠 Antibióticos (uso sistêmico)",n:"Nitrofurantoína 100mg – 56 CP",u:"Tomar 1 CP ao dia"},
+{c:"🦠 Antifúngicos (uso sistêmico)",n:"Nistatina suspensão 100.000 UI/ml",u:"Tomar VO 6ml 3 vezes ao dia por 7 dias"},
+{c:"🦠 Antifúngicos (uso sistêmico)",n:"Nistatina suspensão 100.000 UI/ml",u:"Tomar VO 6ml 3 vezes ao dia por 14 dias"},
+{c:"🦠 Antifúngicos (uso sistêmico)",n:"Tinidazol + Nitrato de Miconazol 30mg/g + 20mg/g – 1 tubo",u:"Aplicar 1 vez à noite antes de dormir por 7 dias"},
+{c:"🦠 Antifúngicos / Ginecológicos",n:"Miconazol 20mg pomada – 2 tubos",u:"Aplicar 3 vezes ao dia nas lesões"},
+{c:"🦠 Antifúngicos / Ginecológicos",n:"Nistatina creme vaginal 25.000 UI/g – 1 bisnaga (60g)",u:"Aplicar 1 dose vaginal à noite por 14 dias"},
+{c:"🧴 Pomadas / Uso tópico dermatológico",n:"Bacitracina + Neomicina 250U + 5mg – 2 tubos",u:"Aplicar 3 vezes ao dia"},
+{c:"🧴 Pomadas / Uso tópico dermatológico",n:"Creme de Própolis 10% – 2 tubos",u:"Aplicar 3 vezes ao dia"},
+{c:"🧴 Pomadas / Uso tópico dermatológico",n:"Vitamina A + Vitamina D + Óxido de Zinco – Pomada 3 tubos",u:"Aplicar a cada troca de fralda"},
+{c:"🧴 Pomadas / Uso tópico dermatológico",n:"Rifasan Spray 10mg/ml",u:"Pulverizar a área afetada a cada 8 horas"},
+{c:"🧠 Neurológicos / Psiquiátricos",n:"Amitriptilina 25mg – 30+30 CP",u:"Tomar 1 CP VO à noite"},
+{c:"🧠 Neurológicos / Psiquiátricos",n:"Citalopram 20mg – 60+60 CP",u:"Tomar 2 CP ao dia"},
+{c:"🧠 Neurológicos / Psiquiátricos",n:"Pregabalina 50mg – 180 CP",u:"Tomar 2 CP VO de 12/12h"},
+{c:"🧬 Endócrinos / Metabólicos",n:"Levotiroxina 50mg – 30/30/30 CP",u:"Tomar 1 CP cedo em jejum"},
+{c:"🧬 Endócrinos / Metabólicos",n:"Levotiroxina 50mg – 180 CP",u:"Tomar 1 CP cedo em jejum"},
+{c:"🧬 Endócrinos / Metabólicos",n:"Glifage XR 500mg - 180CP - USO CONTÍNUO",u:"Tomar 1 CP VO após almoço e 1 CP após jantar - CID 10:E11"},
+{c:"🍽️ Gastrointestinais",n:"Omeprazol 20mg – 30/30/30 CP",u:"Tomar 1 CP cedo em jejum"},
+{c:"🍽️ Gastrointestinais",n:"Bromoprida – 2 frascos",u:"Tomar 40 gotas de 8/8h se náuseas ou vômitos"},
+{c:"🛡️ Corticoides",n:"Prednisona 20mg – 30 CP",u:"Tomar 1 CP VO 1x ao dia por 30 dias"},
+{c:"🛡️ Corticoides",n:"Prednisona 20mg – 90+90 CP",u:"Tomar 3 CP cedo"},
+{c:"🛡️ Corticoides",n:"Dexametasona 4mg – 40 CP",u:"Tomar 5 CP no café da manhã e 5 no almoço"},
+{c:"🩸 Hematológicos / Vasculares",n:"Sulfato Ferroso 40mg – 60 CP",u:"Tomar 1 CP VO antes do almoço e jantar"},
+{c:"🩸 Hematológicos / Vasculares",n:"Diosmina + Hesperidina 450mg + 50mg – 60+60+60 CP",u:"Tomar 1 CP de 12/12h por 3 meses"},
+{c:"💊 Vitaminas",n:"Complexo B 30mg – 30/30/30 CP",u:"Tomar 1 CP ao dia"},
+{c:"⭐ Medicações recém adicionadas",n:"Omeprazol 20mg – 30/30/30 CP",u:"Tomar 1 CP pela manhã"},
+{c:"⭐ Medicações recém adicionadas",n:"Alopurinol 300mg – 30 CP",u:"Tomar 1 CP 1 vez ao dia"},
+{c:"⭐ Medicações recém adicionadas",n:"Fluoxetina 20mg – 60+60 CP",u:"Tomar 1 CP pela manhã"},
+{c:"⭐ Medicações recém adicionadas",n:"Ciprofloxacina 500mg – 28 CP",u:"Tomar 1 CP 12/12h por 14 dias"},
+{c:"👧🏻Parenta",n:"Bupium XL 150mg - 60 CP",u:"Tomar 1 CP V.O pela manhã"},
+{c:"👧🏻Parenta",n:"Topiramato 50mg - 60 CP",u:"Tomar 1 CP V.O pela manhã e 1 CP a noite"}  
 ];
-
-/* Carregar banco completo */
-function carregarBanco(){
- const extras = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
- return [...bancoBase, ...extras];
-}
-
-let banco = carregarBanco();
-
-/* Salvar novas medicações */
-function salvarMedicacoesNovas(){
- const extras = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
-
- document.querySelectorAll(".medicacao-box").forEach(box=>{
-  const n = box.querySelector(".med1").value.trim();
-  const u = box.querySelector(".med2").value.trim();
-  if(!n || !u) return;
-
-  const existe = [...bancoBase, ...extras].some(m =>
-    m.n.toLowerCase() === n.toLowerCase() &&
-    m.u.toLowerCase() === u.toLowerCase()
-  );
-
-  if(!existe){
-    extras.push({c:"⭐ Medicações recém adicionadas",n,u});
-  }
- });
-
- localStorage.setItem(LS_KEY, JSON.stringify(extras));
- banco = carregarBanco();
-}
 
 /* MEDICAÇÕES */
 function adicionarMedicacao(){
@@ -147,8 +237,8 @@ function adicionarMedicacao(){
  <div class="medicacao-linha">
   <div class="num"></div>
   <input class="med1" placeholder="Medicação" oninput="this.value=cap(this.value)">
-  <button class="btn-lupa" onclick="abrirSidebar(this)">🔍</button>
-  <button class="btn-apagar" onclick="this.closest('.medicacao-box').remove();numerar()">APAGAR</button>
+  <button type="button" class="btn-lupa" onclick="abrirSidebar(this)">🔍</button>
+  <button type="button" class="btn-apagar" onclick="this.closest('.medicacao-box').remove();numerar()">APAGAR</button>
  </div>
  <textarea class="med2" placeholder="Uso" oninput="this.value=cap(this.value)"></textarea>`;
  document.getElementById("listaMedicacoes").appendChild(d);
@@ -196,8 +286,6 @@ function renderizarLista(f=""){
 
 /* GERAR PDF */
 async function gerarPDF(){
- salvarMedicacoesNovas();
-
  const file=document.getElementById("pdfBase").files[0];
  if(!file) return alert("Selecione o PDF base.");
 
@@ -206,12 +294,11 @@ async function gerarPDF(){
  const p=pdf.getPages()[0];
 
  /* NOME */
- const nome=document.getElementById("nomePaciente").value;
- p.drawText(nome,{x:188,y:1361.5,size:28,font});
- p.drawText(nome,{x:1370.25,y:1361.5,size:28,font});
+ p.drawText(document.getElementById("nomePaciente").value,{x:188,y:1361.5,size:28,font});
+ p.drawText(document.getElementById("nomePaciente").value,{x:1370.25,y:1361.5,size:28,font});
 
- /* USO */
- const usoValor=document.getElementById("uso").value;
+ /* ✅ USO CORRIGIDO */
+ const usoValor = document.getElementById("uso").value;
  if(usoValor){
   p.drawText(usoValor,{x:406.4,y:1150.64,size:28,font});
   p.drawText(usoValor,{x:1587.4,y:1150.64,size:28,font});
@@ -220,21 +307,50 @@ async function gerarPDF(){
  /* MEDICAÇÕES */
  let y=1009.17;
  document.querySelectorAll(".medicacao-box").forEach((b,i)=>{
-  const texto=`${i+1}) ${b.querySelector(".med1").value}\n${b.querySelector(".med2").value}`;
-  p.drawText(texto,{x:157,y,size:28,font,lineHeight:30});
-  p.drawText(texto,{x:1339.33,y,size:28,font,lineHeight:30});
+  const t=`${i+1}) ${b.querySelector(".med1").value}\n${b.querySelector(".med2").value}`;
+  p.drawText(t,{x:157,y,size:28,font,lineHeight:30});
+  p.drawText(t,{x:1339.33,y,size:28,font,lineHeight:30});
   y-=120;
  });
 
+ /* DATA */
+ const d = document.getElementById("dataDia").value;
+ const m = document.getElementById("dataMes").value;
+ const a = document.getElementById("dataAno").value;
+
+ if(d && m && a){
+  p.drawText(d,{x:878,y:171.83,size:28,font});
+  p.drawText(m,{x:933.5,y:171.83,size:28,font});
+  p.drawText(a,{x:990.5,y:171.83,size:28,font});
+
+  p.drawText(d,{x:2060.5,y:171.83,size:28,font});
+  p.drawText(m,{x:2117.5,y:171.83,size:28,font});
+  p.drawText(a,{x:2172,y:171.83,size:28,font});
+ }
+
  const bytes=await pdf.save();
  const blob=new Blob([bytes],{type:"application/pdf"});
- const a=document.createElement("a");
- a.href=URL.createObjectURL(blob);
- a.download="receita.pdf";
- a.click();
- URL.revokeObjectURL(a.href);
+ const aTag=document.createElement("a");
+ aTag.href=URL.createObjectURL(blob);
+ aTag.download="receita.pdf";
+ aTag.click();
+ URL.revokeObjectURL(aTag.href);
 }
 </script>
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
