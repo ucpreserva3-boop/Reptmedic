@@ -3,6 +3,7 @@
 <!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -243,6 +244,12 @@ const banco=[
 {c:"Medicações recém adicionadas",n:"Omeprazol 20mg – 30/30/30 CP",u:"Tomar 1 CP pela manhã"},
 {c:"Medicações recém adicionadas",n:"Alopurinol 300mg – 30 CP",u:"Tomar 1 CP 1 vez ao dia"}
 ];
+function medicacaoExiste(nome, uso){
+  return banco.some(m =>
+    m.n.toLowerCase().trim() === nome.toLowerCase().trim() &&
+    m.u.toLowerCase().trim() === uso.toLowerCase().trim()
+  );
+}
 
 /* MEDICAÇÕES */
 function adicionarMedicacao(){
@@ -307,6 +314,23 @@ async function gerarPDF(){
  const file=document.getElementById("pdfBase").files[0];
  if(!file) return alert("Selecione o PDF base.");
 
+ /* 🔥 SALVAR MEDICAÇÕES NOVAS NO FIREBASE */
+ for(const b of document.querySelectorAll(".medicacao-box")){
+   const nome = b.querySelector(".med1").value.trim();
+   const uso  = b.querySelector(".med2").value.trim();
+
+   if(nome && uso && !medicacaoExiste(nome, uso)){
+     await salvarMedicacaoFirebase(nome, uso);
+
+     // adiciona no banco local (sidebar atual)
+     banco.push({
+       c: "Medicações recém adicionadas",
+       n: nome,
+       u: uso
+     });
+   }
+ }
+
  const pdf=await PDFLib.PDFDocument.load(await file.arrayBuffer());
  const font=await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
  const p=pdf.getPages()[0];
@@ -366,6 +390,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
+const db = firebase.firestore();
 
 /* LOGIN */
 function login(){
