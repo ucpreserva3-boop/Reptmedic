@@ -116,7 +116,7 @@ button{
   <button onclick="login()">Entrar</button>
 </div>
 
-<div class="container"> id="app" style="display:none">
+<div class="container" id="app" style="display:none">
 <h1>Receita Médica</h1>
 
 <div class="campo">
@@ -168,6 +168,10 @@ button{
 </div>
 
 <script>
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("app").style.display = "none";
+  document.getElementById("loginBox").style.display = "block";
+});
 const LIMITE = 8;
 let campoAtual = null;
 
@@ -372,12 +376,15 @@ function login(){
 
 /* CONTROLE DE SESSÃO */
 auth.onAuthStateChanged(user=>{
+  const login = document.getElementById("loginBox");
+  const app = document.getElementById("app");
+
   if(user){
-    document.getElementById("loginBox").style.display="none";
-    document.getElementById("app").style.display="block";
+    login.style.display = "none";
+    app.style.display = "block";
   }else{
-    document.getElementById("loginBox").style.display="block";
-    document.getElementById("app").style.display="none";
+    login.style.display = "block";
+    app.style.display = "none";
   }
 });
 
