@@ -57,15 +57,22 @@ button{
 .sidebar-busca input{padding:6px 8px;font-size:13px;height:32px}
 .sidebar-lista{flex:1;overflow-y:auto;padding:6px 8px}
 .categoria{font-weight:bold;margin:10px 0 4px;font-size:14px}
-.item{padding:6px 4px;border-bottom:1px dashed #ccc;font-size:14px;cursor:pointer}
+.item{padding:6px 4px;border-bottom:1px dashed #ccc;font-size:14px}
 .item:hover{background:#f0f0f0}
 
-/* ➕ FORM NOVA MEDICAÇÃO (ADICIONADO) */
-#formNovaMedicacao input,
-#formNovaMedicacao textarea{
- margin-bottom:6px;
- font-size:14px
+/* 🔧 AÇÕES SIDEBAR (ADICIONADO) */
+.acoes{
+ display:flex;
+ gap:6px;
+ margin-top:4px
 }
+.acoes button{
+ flex:1;
+ font-size:12px;
+ padding:6px
+}
+.btn-editar{background:#f1c40f;color:#000}
+.btn-excluir{background:#e74c3c}
 </style>
 </head>
 
@@ -133,19 +140,6 @@ button{
   <input placeholder="Buscar..." oninput="renderizarLista(this.value)">
  </div>
 
- <!-- ➕ ADICIONAR MEDICAÇÃO (ADICIONADO SEM REMOVER NADA) -->
- <div style="padding:8px;border-top:1px solid #ddd">
-  <button style="width:100%;background:#2980b9"
-   onclick="toggleNovaMedicacao()">➕ Nova Medicação</button>
-
-  <div id="formNovaMedicacao" style="display:none;margin-top:10px">
-   <input id="novaCategoria" placeholder="Categoria">
-   <input id="novaNome" placeholder="Medicação">
-   <textarea id="novaUso" placeholder="Forma de uso"></textarea>
-   <button onclick="salvarMedicacaoManual()" style="background:#27ae60">Salvar</button>
-  </div>
- </div>
-
  <div id="listaSidebar" class="sidebar-lista"></div>
 </div>
 
@@ -168,66 +162,25 @@ function fazerLogin(){
  const email = document.getElementById("email").value.trim();
  const senha = document.getElementById("senha").value.trim();
  const erro  = document.getElementById("erro");
- erro.innerText = "";
+ erro.innerText="";
  auth.signInWithEmailAndPassword(email, senha)
-  .catch(e => erro.innerText = e.message);
+  .catch(e=>erro.innerText=e.message);
 }
-
-function logout(){ auth.signOut(); }
+function logout(){auth.signOut();}
 
 auth.onAuthStateChanged(user=>{
- document.getElementById("loginBox").style.display = user ? "none" : "block";
- document.getElementById("app").style.display      = user ? "block" : "none";
+ document.getElementById("loginBox").style.display=user?"none":"block";
+ document.getElementById("app").style.display=user?"block":"none";
  if(user) carregarMedicacoes();
 });
 
 /* ===== SISTEMA ===== */
-const LIMITE = 8;
-let campoAtual = null;
-let banco = [];
+let campoAtual=null;
+let banco=[];
 
-function cap(t){return t?t[0].toUpperCase()+t.slice(1):""}
-
-/* MEDICAÇÕES */
-function adicionarMedicacao(){
- if(document.querySelectorAll(".medicacao-box").length>=LIMITE)
-  return alert("Limite máximo de 8 medicações.");
- const d=document.createElement("div");
- d.className="medicacao-box";
- d.innerHTML=`
- <div class="medicacao-linha">
-  <div class="num"></div>
-  <input class="med1" placeholder="Medicação" oninput="this.value=cap(this.value)">
-  <button class="btn-lupa" onclick="abrirSidebar(this)">🔍</button>
-  <button class="btn-apagar" onclick="this.closest('.medicacao-box').remove();numerar()">APAGAR</button>
- </div>
- <textarea class="med2" placeholder="Uso" oninput="this.value=cap(this.value)"></textarea>`;
- document.getElementById("listaMedicacoes").appendChild(d);
- numerar();
-}
-
-function numerar(){
- document.querySelectorAll(".num").forEach((e,i)=>e.textContent=(i+1)+")");
-}
-
-/* SIDEBAR */
-function abrirSidebar(btn){
- campoAtual=btn.closest(".medicacao-box");
- document.getElementById("sidebar").style.display="flex";
- renderizarLista();
-}
-function fecharSidebar(){
- document.getElementById("sidebar").style.display="none";
-}
-
-/* FIRESTORE */
-async function carregarMedicacoes(){
- const snap=await db.collection("medicacoes").get();
- banco=snap.docs.map(d=>d.data());
-}
-
+/* SIDEBAR LISTA COM EDITAR/APAGAR (ADICIONADO) */
 function renderizarLista(f=""){
- const lista = document.getElementById("listaSidebar");
+ const lista=document.getElementById("listaSidebar");
  lista.innerHTML="";
  let cat="";
  banco.filter(m=>(m.nome+m.uso).toLowerCase().includes(f.toLowerCase()))
@@ -239,9 +192,16 @@ function renderizarLista(f=""){
    c.textContent=cat;
    lista.appendChild(c);
   }
+
   const i=document.createElement("div");
   i.className="item";
-  i.innerHTML=`<strong>${m.nome}</strong><br>${m.uso}`;
+  i.innerHTML=`
+   <strong>${m.nome}</strong><br>${m.uso}
+   <div class="acoes">
+    <button class="btn-editar" onclick="editarMedicacao('${m.nome}','${m.uso}','${m.categoria}')">Editar</button>
+    <button class="btn-excluir" onclick="excluirMedicacao('${m.nome}','${m.uso}')">Apagar</button>
+   </div>
+  `;
   i.onclick=()=>{
    campoAtual.querySelector(".med1").value=m.nome;
    campoAtual.querySelector(".med2").value=m.uso;
@@ -251,55 +211,24 @@ function renderizarLista(f=""){
  });
 }
 
-/* ➕ NOVA MEDICAÇÃO MANUAL */
-function toggleNovaMedicacao(){
- const f=document.getElementById("formNovaMedicacao");
- f.style.display=f.style.display==="none"?"block":"none";
+/* ✏️ EDITAR */
+function editarMedicacao(nome,uso,categoria){
+ document.getElementById("novaCategoria").value=categoria;
+ document.getElementById("novaNome").value=nome;
+ document.getElementById("novaUso").value=uso;
+ document.getElementById("formNovaMedicacao").style.display="block";
 }
 
-async function salvarMedicacaoManual(){
- const categoria=document.getElementById("novaCategoria").value.trim();
- const nome=document.getElementById("novaNome").value.trim();
- const uso=document.getElementById("novaUso").value.trim();
- if(!categoria||!nome||!uso) return alert("Preencha todos os campos");
-
- await db.collection("medicacoes").add({categoria,nome,uso});
- document.getElementById("novaCategoria").value="";
- document.getElementById("novaNome").value="";
- document.getElementById("novaUso").value="";
- document.getElementById("formNovaMedicacao").style.display="none";
+/* 🗑️ EXCLUIR */
+async function excluirMedicacao(nome,uso){
+ if(!confirm("Deseja apagar esta medicação?")) return;
+ const q=await db.collection("medicacoes")
+  .where("nome","==",nome)
+  .where("uso","==",uso)
+  .get();
+ q.forEach(d=>d.ref.delete());
  await carregarMedicacoes();
  renderizarLista();
-}
-
-/* SALVAR NOVAS MEDICAÇÕES */
-async function salvarNovasMedicacoes(){
- for(const b of document.querySelectorAll(".medicacao-box")){
-  const nome=b.querySelector(".med1").value.trim();
-  const uso=b.querySelector(".med2").value.trim();
-  if(!nome||!uso) continue;
-  const q=await db.collection("medicacoes").where("nome","==",nome).where("uso","==",uso).get();
-  if(q.empty){
-   await db.collection("medicacoes").add({nome,uso,categoria:"⭐ Adicionadas pelos usuários"});
-  }
- }
-}
-
-/* PDF (MANTIDO) */
-async function gerarPDF(){
- await salvarNovasMedicacoes();
- const file=document.getElementById("pdfBase").files[0];
- if(!file) return alert("Selecione o PDF base.");
- const pdf=await PDFLib.PDFDocument.load(await file.arrayBuffer());
- const font=await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
- const p=pdf.getPages()[0];
- p.drawText(nomePaciente.value,{x:188,y:1361.5,size:28,font});
- p.drawText(nomePaciente.value,{x:1370.25,y:1361.5,size:28,font});
- const bytes=await pdf.save();
- const a=document.createElement("a");
- a.href=URL.createObjectURL(new Blob([bytes],{type:"application/pdf"}));
- a.download="receita.pdf";
- a.click();
 }
 </script>
 
