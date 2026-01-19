@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Preenchimento de Receita</title>
 
-<!-- 🔥 FIREBASE AUTH -->
+<!-- 🔥 FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 
@@ -17,13 +17,15 @@ body{margin:0;font-family:Arial,sans-serif;background:#f4f4f4}
 
 /* LOGIN */
 #login{
- max-width:400px;
- margin:100px auto;
+ max-width:380px;
+ margin:120px auto;
  background:#fff;
  padding:20px;
  border-radius:8px;
 }
-#login h2{text-align:center}
+#login h2{text-align:center;margin-bottom:16px}
+#login input{margin-bottom:10px}
+#erro{color:red;text-align:center}
 
 /* APP */
 .container{max-width:750px;margin:auto;padding:16px;display:none}
@@ -48,7 +50,8 @@ button{
  background:#27ae60;
  color:#fff;
 }
-button.sair{background:#e74c3c;margin-bottom:16px}
+
+.sair{background:#e74c3c;margin-bottom:16px}
 
 .medicacao-box{background:#fff;border:1px solid #ccc;padding:10px;margin-bottom:10px}
 .medicacao-linha{display:flex;gap:6px;align-items:center}
@@ -57,7 +60,6 @@ button.sair{background:#e74c3c;margin-bottom:16px}
 .btn-lupa{background:#34495e}
 .btn-add{background:#2980b9;margin-top:8px}
 
-/* DATA */
 .data-box{display:flex;gap:10px}
 .data-box input{text-align:center}
 
@@ -89,7 +91,7 @@ button.sair{background:#e74c3c;margin-bottom:16px}
 <input id="email" placeholder="Email">
 <input id="senha" type="password" placeholder="Senha">
 <button onclick="login()">Entrar</button>
-<p id="erro" style="color:red;text-align:center"></p>
+<p id="erro"></p>
 </div>
 
 <!-- 🔓 APP -->
@@ -157,10 +159,17 @@ const auth = firebase.auth();
 
 /* LOGIN */
 function login(){
- auth.signInWithEmailAndPassword(
-  email.value,
-  senha.value
- ).catch(()=>erro.innerText="Login ou senha inválidos");
+ const email = document.getElementById("email").value;
+ const senha = document.getElementById("senha").value;
+ const erro = document.getElementById("erro");
+
+ erro.innerText = "";
+
+ auth.signInWithEmailAndPassword(email, senha)
+  .catch(err=>{
+   erro.innerText = err.message;
+   console.error(err);
+  });
 }
 
 /* LOGOUT */
@@ -168,26 +177,117 @@ function logout(){
  auth.signOut();
 }
 
-/* ESTADO */
+/* CONTROLE DE ACESSO */
 auth.onAuthStateChanged(user=>{
  if(user){
-  login.style.display="none";
-  app.style.display="block";
+  document.getElementById("login").style.display="none";
+  document.getElementById("app").style.display="block";
  }else{
-  login.style.display="block";
-  app.style.display="none";
+  document.getElementById("login").style.display="block";
+  document.getElementById("app").style.display="none";
  }
 });
 
-/* ======= SEU CÓDIGO ORIGINAL ABAIXO (INALTERADO) ======= */
+/* ======= SEU CÓDIGO ORIGINAL (SEM ALTERAÇÃO FUNCIONAL) ======= */
 const LIMITE = 8;
 let campoAtual = null;
 function cap(t){return t?t[0].toUpperCase()+t.slice(1):""}
 
-/* 👉 BANCO DE MEDICAÇÕES (mantido igual) */
-const banco = [ /* TODO o seu banco original aqui, sem alteração */ ];
+/* ⚠️ MANTENHA SEU BANCO ORIGINAL AQUI */
+const banco = [
+ {c:"💊 Vitaminas",n:"Complexo B 30mg – 30/30/30 CP",u:"Tomar 1 CP ao dia"}
+];
 
-/* (todo o restante do seu JS de medicação + PDF continua igual) */
+/* MEDICAÇÕES */
+function adicionarMedicacao(){
+ if(document.querySelectorAll(".medicacao-box").length>=LIMITE)
+  return alert("Limite máximo de 8 medicações.");
+
+ const d=document.createElement("div");
+ d.className="medicacao-box";
+ d.innerHTML=`
+ <div class="medicacao-linha">
+  <div class="num"></div>
+  <input class="med1" placeholder="Medicação" oninput="this.value=cap(this.value)">
+  <button type="button" class="btn-lupa" onclick="abrirSidebar(this)">🔍</button>
+  <button type="button" class="btn-apagar" onclick="this.closest('.medicacao-box').remove();numerar()">APAGAR</button>
+ </div>
+ <textarea class="med2" placeholder="Uso" oninput="this.value=cap(this.value)"></textarea>`;
+ document.getElementById("listaMedicacoes").appendChild(d);
+ numerar();
+}
+
+function numerar(){
+ document.querySelectorAll(".num").forEach((e,i)=>e.textContent=(i+1)+")");
+}
+
+function abrirSidebar(btn){
+ campoAtual=btn.closest(".medicacao-box");
+ document.getElementById("sidebar").style.display="flex";
+ renderizarLista();
+}
+function fecharSidebar(){
+ document.getElementById("sidebar").style.display="none";
+}
+
+function renderizarLista(f=""){
+ const l=document.getElementById("listaSidebar");
+ l.innerHTML="";
+ let cat="";
+ banco.filter(m=>(m.n+m.u).toLowerCase().includes(f.toLowerCase()))
+ .forEach(m=>{
+  if(m.c!==cat){
+   cat=m.c;
+   const c=document.createElement("div");
+   c.className="categoria";
+   c.textContent=m.c;
+   l.appendChild(c);
+  }
+  const i=document.createElement("div");
+  i.className="item";
+  i.innerHTML=`<strong>${m.n}</strong><br>${m.u}`;
+  i.onclick=()=>{
+   campoAtual.querySelector(".med1").value=m.n;
+   campoAtual.querySelector(".med2").value=m.u;
+   fecharSidebar();
+  };
+  l.appendChild(i);
+ });
+}
+
+/* GERAR PDF (INALTERADO) */
+async function gerarPDF(){
+ const file=document.getElementById("pdfBase").files[0];
+ if(!file) return alert("Selecione o PDF base.");
+
+ const pdf=await PDFLib.PDFDocument.load(await file.arrayBuffer());
+ const font=await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
+ const p=pdf.getPages()[0];
+
+ p.drawText(nomePaciente.value,{x:188,y:1361.5,size:28,font});
+ p.drawText(nomePaciente.value,{x:1370.25,y:1361.5,size:28,font});
+
+ const usoValor = uso.value;
+ if(usoValor){
+  p.drawText(usoValor,{x:406.4,y:1150.64,size:28,font});
+  p.drawText(usoValor,{x:1587.4,y:1150.64,size:28,font});
+ }
+
+ let y=1009.17;
+ document.querySelectorAll(".medicacao-box").forEach((b,i)=>{
+  const t=`${i+1}) ${b.querySelector(".med1").value}\n${b.querySelector(".med2").value}`;
+  p.drawText(t,{x:157,y,size:28,font,lineHeight:30});
+  p.drawText(t,{x:1339.33,y,size:28,font,lineHeight:30});
+  y-=120;
+ });
+
+ const bytes=await pdf.save();
+ const blob=new Blob([bytes],{type:"application/pdf"});
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download="receita.pdf";
+ a.click();
+}
 </script>
 
 </body>
