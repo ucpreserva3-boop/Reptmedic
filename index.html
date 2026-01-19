@@ -276,6 +276,21 @@ async function gerarPDF(){
   y-=120;
  });
 
+ /* ✅ DATA ADICIONADA (SEM REMOVER NADA) */
+ const dia = document.getElementById("dataDia").value;
+ const mes = document.getElementById("dataMes").value;
+ const ano = document.getElementById("dataAno").value;
+
+ if(dia && mes && ano){
+  p.drawText(dia,{x:878,y:171.83,size:28,font});
+  p.drawText(mes,{x:933.5,y:171.83,size:28,font});
+  p.drawText(ano,{x:990.5,y:171.83,size:28,font});
+
+  p.drawText(dia,{x:2060.5,y:171.83,size:28,font});
+  p.drawText(mes,{x:2117.5,y:171.83,size:28,font});
+  p.drawText(ano,{x:2172,y:171.83,size:28,font});
+ }
+
  const bytes=await pdf.save();
  const a=document.createElement("a");
  a.href=URL.createObjectURL(new Blob([bytes],{type:"application/pdf"}));
