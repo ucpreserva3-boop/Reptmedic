@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Preenchimento de Receita</title>
+<title>Receita Médica</title>
 
-<!-- 🔥 FIREBASE -->
+<!-- 🔥 Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -17,47 +17,40 @@
 body{margin:0;font-family:Arial,sans-serif;background:#f4f4f4}
 
 /* LOGIN */
-#login{max-width:380px;margin:120px auto;background:#fff;padding:20px;border-radius:8px}
-#login h2{text-align:center;margin-bottom:16px}
-#login input{margin-bottom:10px;width:100%;padding:10px}
+#login{
+ max-width:360px;margin:120px auto;background:#fff;
+ padding:20px;border-radius:8px
+}
+#login h2{text-align:center}
+#login input{width:100%;padding:10px;margin-bottom:10px}
 #erro{color:red;text-align:center}
 
 /* APP */
 .container{max-width:750px;margin:auto;padding:16px;display:none}
-h1{text-align:center;margin-bottom:20px}
+h1{text-align:center}
+button{padding:12px;border:none;border-radius:6px;cursor:pointer}
+.sair{background:#e74c3c;color:#fff;margin-bottom:12px}
+.btn-add{background:#2980b9;color:#fff}
+.btn-lupa{background:#34495e;color:#fff}
+.btn-apagar{background:#e74c3c;color:#fff}
+.gerar{background:#27ae60;color:#fff}
+
 .campo{margin-bottom:16px}
-label{font-weight:bold;display:block;margin-bottom:6px}
+label{font-weight:bold}
+input,select,textarea{width:100%;padding:10px;font-size:16px}
 
-input,select,textarea{
- width:100%;padding:12px;font-size:16px;box-sizing:border-box
-}
-
-button{
- padding:12px;font-size:16px;border:none;border-radius:6px;
- cursor:pointer;background:#27ae60;color:#fff
-}
-
-.sair{background:#e74c3c;margin-bottom:16px}
-
-.medicacao-box{background:#fff;border:1px solid #ccc;padding:10px;margin-bottom:10px}
+.medicacao-box{background:#fff;padding:10px;margin-bottom:10px;border:1px solid #ccc}
 .medicacao-linha{display:flex;gap:6px;align-items:center}
-.num{width:32px;font-weight:bold;text-align:center}
-.btn-apagar{background:#e74c3c}
-.btn-lupa{background:#34495e}
-.btn-add{background:#2980b9;margin-top:8px}
-
-.data-box{display:flex;gap:10px}
-.data-box input{text-align:center}
+.num{width:32px;text-align:center;font-weight:bold}
 
 /* SIDEBAR */
-.sidebar{position:fixed;inset:0;background:#fff;z-index:999;display:none;flex-direction:column}
-.sidebar-topo{background:#e74c3c;padding:6px 10px}
-.sidebar-topo button{background:#c0392b;padding:6px 10px;font-size:14px}
+.sidebar{position:fixed;inset:0;background:#fff;display:none;flex-direction:column;z-index:999}
+.sidebar-topo{background:#e74c3c;padding:8px}
+.sidebar-topo button{background:#c0392b;color:#fff}
 .sidebar-busca{padding:8px}
-.sidebar-busca input{padding:6px 8px;font-size:13px;height:32px}
-.sidebar-lista{flex:1;overflow-y:auto;padding:6px 8px}
-.categoria{font-weight:bold;margin:10px 0 4px;font-size:14px}
-.item{padding:6px 4px;border-bottom:1px dashed #ccc;font-size:14px;cursor:pointer}
+.sidebar-lista{flex:1;overflow-y:auto;padding:8px}
+.categoria{font-weight:bold;margin-top:10px}
+.item{padding:6px;border-bottom:1px dashed #ccc;cursor:pointer}
 .item:hover{background:#f0f0f0}
 </style>
 </head>
@@ -66,31 +59,25 @@ button{
 
 <!-- 🔐 LOGIN -->
 <div id="login">
- <h2>Acesso restrito</h2>
- <input id="email" type="email" placeholder="Email">
- <input id="senha" type="password" placeholder="Senha">
- <button id="btnLogin">Entrar</button>
- <p id="erro"></p>
+<h2>Acesso restrito</h2>
+<input id="email" type="email" placeholder="Email">
+<input id="senha" type="password" placeholder="Senha">
+<button onclick="login()">Entrar</button>
+<p id="erro"></p>
 </div>
 
 <!-- 🔓 APP -->
 <div class="container" id="app">
-
 <h1>Receita Médica</h1>
 <button class="sair" onclick="logout()">Sair</button>
 
 <div class="campo">
-<label>Selecionar PDF base</label>
-<input type="file" id="pdfBase" accept="application/pdf">
-</div>
-
-<div class="campo">
-<label>NOME DO PACIENTE</label>
+<label>Nome do paciente</label>
 <input id="nomePaciente" oninput="this.value=this.value.toUpperCase()">
 </div>
 
 <div class="campo">
-<label>USO</label>
+<label>Uso</label>
 <select id="uso">
 <option>USO ORAL</option>
 <option>USO TÓPICO</option>
@@ -98,21 +85,21 @@ button{
 </div>
 
 <div class="campo">
-<label>MEDICAÇÕES</label>
+<label>Medicações</label>
 <div id="listaMedicacoes"></div>
-<button type="button" class="btn-add" onclick="adicionarMedicacao()">➕ Adicionar Medicação</button>
+<button class="btn-add" onclick="adicionarMedicacao()">➕ Adicionar</button>
 </div>
 
 <div class="campo">
-<label>DATA</label>
-<div class="data-box">
+<label>Data</label>
+<div style="display:flex;gap:6px">
 <input id="dataDia" placeholder="DD" maxlength="2">
 <input id="dataMes" placeholder="MM" maxlength="2">
 <input id="dataAno" placeholder="AAAA" maxlength="4">
 </div>
 </div>
 
-<button type="button" onclick="gerarPDF()">📄 Gerar PDF</button>
+<button class="gerar" onclick="gerarPDF()">📄 Gerar PDF</button>
 </div>
 
 <!-- SIDEBAR -->
@@ -133,58 +120,41 @@ firebase.initializeApp({
  authDomain: "receituario-3c175.firebaseapp.com",
  projectId: "receituario-3c175"
 });
-
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
 /* 🔐 LOGIN */
-btnLogin.onclick = () => {
- erro.innerText = "";
- if(!email.value || !senha.value){
-  erro.innerText = "Preencha email e senha.";
-  return;
- }
- auth.signInWithEmailAndPassword(email.value, senha.value)
-  .catch(()=> erro.innerText="Email ou senha inválidos.");
-};
-
-function logout(){ auth.signOut(); }
-
-auth.onAuthStateChanged(user=>{
- login.style.display = user ? "none" : "block";
- app.style.display   = user ? "block" : "none";
- if(user) carregarMedicacoes();
+function login(){
+ erro.innerText="";
+ auth.signInWithEmailAndPassword(email.value,senha.value)
+ .catch(e=>erro.innerText="Login inválido");
+}
+function logout(){auth.signOut();}
+auth.onAuthStateChanged(u=>{
+ login.style.display=u?"none":"block";
+ app.style.display=u?"block":"none";
+ if(u) carregarMedicacoes();
 });
 
 /* ===== MEDICAÇÕES ===== */
-const LIMITE = 8;
-let campoAtual = null;
-let banco = [];
+const LIMITE=8;
+let campoAtual=null;
+let banco=[];
 
-function cap(t){ return t ? t[0].toUpperCase()+t.slice(1) : ""; }
-
-/* 🔄 CARREGAR MEDICAÇÕES DO FIRESTORE */
-async function carregarMedicacoes(){
- banco = [];
- const snap = await db.collection("medicacoes").orderBy("categoria").get();
- snap.forEach(doc => banco.push(doc.data()));
-}
-
-/* ➕ ADICIONAR CAMPO */
 function adicionarMedicacao(){
- if(document.querySelectorAll(".medicacao-box").length >= LIMITE)
-  return alert("Limite máximo de 8 medicações.");
+ if(document.querySelectorAll(".medicacao-box").length>=LIMITE)
+  return alert("Limite máximo de 8");
 
- const d = document.createElement("div");
+ const d=document.createElement("div");
  d.className="medicacao-box";
  d.innerHTML=`
  <div class="medicacao-linha">
   <div class="num"></div>
-  <input class="med1" placeholder="Medicação" oninput="this.value=cap(this.value)">
+  <input class="med1" placeholder="Medicação">
   <button class="btn-lupa" onclick="abrirSidebar(this)">🔍</button>
-  <button class="btn-apagar" onclick="this.closest('.medicacao-box').remove();numerar()">APAGAR</button>
+  <button class="btn-apagar" onclick="this.closest('.medicacao-box').remove();numerar()">✖</button>
  </div>
- <textarea class="med2" placeholder="Uso" oninput="this.value=cap(this.value)"></textarea>`;
+ <textarea class="med2" placeholder="Uso"></textarea>`;
  listaMedicacoes.appendChild(d);
  numerar();
 }
@@ -193,76 +163,72 @@ function numerar(){
  document.querySelectorAll(".num").forEach((e,i)=>e.textContent=(i+1)+")");
 }
 
-/* 🔍 SIDEBAR */
 function abrirSidebar(btn){
- campoAtual = btn.closest(".medicacao-box");
+ campoAtual=btn.closest(".medicacao-box");
  sidebar.style.display="flex";
  renderizarLista();
 }
-function fecharSidebar(){ sidebar.style.display="none"; }
+function fecharSidebar(){sidebar.style.display="none";}
+
+/* 🔥 FIRESTORE */
+async function carregarMedicacoes(){
+ const snap=await db.collection("medicacoes").get();
+ banco=snap.docs.map(d=>d.data());
+}
 
 function renderizarLista(f=""){
  listaSidebar.innerHTML="";
  let cat="";
- banco
- .filter(m => (m.nome+m.uso).toLowerCase().includes(f.toLowerCase()))
+ banco.filter(m=>(m.nome+m.uso).toLowerCase().includes(f.toLowerCase()))
  .forEach(m=>{
-  if(m.categoria !== cat){
-   cat = m.categoria;
-   const c = document.createElement("div");
+  if(m.categoria!==cat){
+   cat=m.categoria;
+   const c=document.createElement("div");
    c.className="categoria";
-   c.textContent = m.categoria;
+   c.innerText=cat;
    listaSidebar.appendChild(c);
   }
-  const i = document.createElement("div");
+  const i=document.createElement("div");
   i.className="item";
   i.innerHTML=`<strong>${m.nome}</strong><br>${m.uso}`;
   i.onclick=()=>{
-   campoAtual.querySelector(".med1").value = m.nome;
-   campoAtual.querySelector(".med2").value = m.uso;
+   campoAtual.querySelector(".med1").value=m.nome;
+   campoAtual.querySelector(".med2").value=m.uso;
    fecharSidebar();
   };
   listaSidebar.appendChild(i);
  });
 }
 
-/* 🔥 SALVAR NOVAS MEDICAÇÕES */
-async function salvarMedicacoesNoFirestore(){
- const boxes = document.querySelectorAll(".medicacao-box");
+async function salvarMedicacoes(){
+ const boxes=document.querySelectorAll(".medicacao-box");
  for(const b of boxes){
-  const nome = b.querySelector(".med1").value.trim();
-  const uso  = b.querySelector(".med2").value.trim();
-  if(!nome || !uso) continue;
+  const nome=b.querySelector(".med1").value.trim();
+  const uso=b.querySelector(".med2").value.trim();
+  if(!nome||!uso) continue;
 
-  const q = await db.collection("medicacoes")
-   .where("nome","==",nome)
-   .where("uso","==",uso)
-   .get();
-
+  const q=await db.collection("medicacoes")
+   .where("nome","==",nome).where("uso","==",uso).get();
   if(q.empty){
    await db.collection("medicacoes").add({
-    nome,
-    uso,
-    categoria:"⭐ Adicionadas pelos usuários"
+    nome,uso,categoria:"⭐ Adicionadas pelos usuários"
    });
   }
  }
- await carregarMedicacoes();
 }
 
-/* 📄 GERAR PDF */
+/* 📄 PDF BASE AUTOMÁTICO */
 async function gerarPDF(){
- await salvarMedicacoesNoFirestore();
+ await salvarMedicacoes();
 
- const file = pdfBase.files[0];
- if(!file) return alert("Selecione o PDF base.");
-
- const pdf  = await PDFLib.PDFDocument.load(await file.arrayBuffer());
+ const response = await fetch("pdf/receita_base.pdf");
+ const pdfBytes = await response.arrayBuffer();
+ const pdf = await PDFLib.PDFDocument.load(pdfBytes);
  const font = await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
- const p    = pdf.getPages()[0];
+ const p = pdf.getPages()[0];
 
- p.drawText(nomePaciente.value,{x:188,y:1361.5,size:28,font});
- p.drawText(nomePaciente.value,{x:1370.25,y:1361.5,size:28,font});
+ p.drawText(nomePaciente.value,{x:188,y:1361,size:28,font});
+ p.drawText(nomePaciente.value,{x:1370,y:1361,size:28,font});
 
  let y=1009;
  document.querySelectorAll(".medicacao-box").forEach((b,i)=>{
@@ -271,10 +237,10 @@ async function gerarPDF(){
   y-=120;
  });
 
- const bytes = await pdf.save();
- const blob  = new Blob([bytes],{type:"application/pdf"});
- const a = document.createElement("a");
- a.href = URL.createObjectURL(blob);
+ const bytes=await pdf.save();
+ const blob=new Blob([bytes],{type:"application/pdf"});
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
  a.download="receita.pdf";
  a.click();
 }
