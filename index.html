@@ -312,14 +312,63 @@ function renderizarLista(f=""){
   }
   const i=document.createElement("div");
   i.className="item";
-  i.innerHTML=`<strong>${m.n}</strong><br>${m.u}`;
-  i.onclick=()=>{
-   campoAtual.querySelector(".med1").value=m.n;
-   campoAtual.querySelector(".med2").value=m.u;
-   fecharSidebar();
-  };
+const i=document.createElement("div");
+i.className="item";
+i.innerHTML=`
+  <strong>${m.n}</strong><br>
+  ${m.u}
+  <div style="margin-top:6px;display:flex;gap:6px">
+    <button style="background:#2980b9;font-size:12px"
+      onclick="editarMedicacao(${banco.indexOf(m)})">✏️ Editar</button>
+    <button style="background:#e74c3c;font-size:12px"
+      onclick="apagarMedicacao(${banco.indexOf(m)})">🗑️ Apagar</button>
+  </div>
+`;
+i.onclick=(e)=>{
+  if(e.target.tagName === "BUTTON") return;
+  campoAtual.querySelector(".med1").value=m.n;
+  campoAtual.querySelector(".med2").value=m.u;
+  fecharSidebar();
+};
   l.appendChild(i);
  });
+ 
+}
+async function editarMedicacao(index){
+  const m = banco[index];
+  if(!m) return;
+
+  const novoNome = prompt("Editar medicação:", m.n);
+  if(!novoNome) return;
+
+  const novoUso = prompt("Editar uso:", m.u);
+  if(!novoUso) return;
+
+  m.n = novoNome.trim();
+  m.u = novoUso.trim();
+
+  if(m.id){
+    await db.collection("medicacoes").doc(m.id).update({
+      nome: m.n,
+      uso: m.u
+    });
+  }
+
+  renderizarLista();
+}
+
+async function apagarMedicacao(index){
+  const m = banco[index];
+  if(!m) return;
+
+  if(!confirm("Deseja realmente apagar esta medicação?")) return;
+
+  if(m.id){
+    await db.collection("medicacoes").doc(m.id).delete();
+  }
+
+  banco.splice(index, 1);
+  renderizarLista();
 }
 
 /* GERAR PDF */
@@ -436,6 +485,7 @@ function logout(){
 
 </body>
 </html>
+
 
 
 
