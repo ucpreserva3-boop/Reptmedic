@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Preenchimento de Receita</title>
 
-<!-- 🔥 FIREBASE -->
+<!-- 🔥 FIREBASE (COMPAT) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -57,7 +57,7 @@ button{padding:12px;border:none;border-radius:6px;cursor:pointer}
 <!-- 🔓 APP -->
 <div class="container" id="app">
 <h1>Receita Médica</h1>
-<button class="sair" onclick="logout()">Sair</button>
+<button class="sair" onclick="logout()">Sair</button><br><br>
 
 <input type="file" id="pdfBase" accept="application/pdf"><br><br>
 <input id="nomePaciente" placeholder="Nome do paciente"><br><br>
@@ -65,7 +65,7 @@ button{padding:12px;border:none;border-radius:6px;cursor:pointer}
 <select id="uso">
 <option>USO ORAL</option>
 <option>USO TÓPICO</option>
-</select>
+</select><br><br>
 
 <div id="listaMedicacoes"></div>
 <button class="btn-add" onclick="adicionarMedicacao()">➕ Adicionar Medicação</button>
@@ -86,17 +86,20 @@ button{padding:12px;border:none;border-radius:6px;cursor:pointer}
 </div>
 
 <script>
-/* 🔥 FIREBASE */
+/* 🔥 FIREBASE CONFIG (CORRETO – COMPAT) */
 firebase.initializeApp({
- apiKey: "SUA_API_KEY",
- authDomain: "SEU_PROJECT.firebaseapp.com",
- projectId: "SEU_PROJECT"
+  apiKey: "AIzaSyAhWOQRO47_RiBjj2RG4BXf7lhYy6KNiDg",
+  authDomain: "receituario-3c175.firebaseapp.com",
+  projectId: "receituario-3c175",
+  storageBucket: "receituario-3c175.appspot.com",
+  messagingSenderId: "809180223495",
+  appId: "1:809180223495:web:b6004647b7a0c6965f32a2"
 });
 
 const auth = firebase.auth();
-const db = firebase.firestore();
+const db   = firebase.firestore();
 
-/* 🔐 LOGIN CORRIGIDO */
+/* 🔐 LOGIN */
 function fazerLogin(){
  const email = document.getElementById("email").value.trim();
  const senha = document.getElementById("senha").value.trim();
@@ -104,14 +107,15 @@ function fazerLogin(){
  erro.innerText = "";
 
  auth.signInWithEmailAndPassword(email, senha)
-  .then(()=>console.log("Login OK"))
   .catch(e=>{
     console.error(e.code, e.message);
     erro.innerText = e.message;
   });
 }
 
-function logout(){ auth.signOut(); }
+function logout(){
+ auth.signOut();
+}
 
 auth.onAuthStateChanged(user=>{
  document.getElementById("login").style.display = user ? "none" : "block";
@@ -131,7 +135,7 @@ function adicionarMedicacao(){
   <div class="num"></div>
   <input class="med1" placeholder="Medicação">
   <button class="btn-lupa" onclick="abrirSidebar(this)">🔍</button>
-  <button class="btn-apagar" onclick="this.parentElement.parentElement.remove()">✖</button>
+  <button class="btn-apagar" onclick="this.closest('.medicacao-box').remove()">✖</button>
  </div>
  <textarea class="med2" placeholder="Uso"></textarea>`;
  document.getElementById("listaMedicacoes").appendChild(d);
@@ -147,6 +151,7 @@ function abrirSidebar(btn){
  document.getElementById("sidebar").style.display="flex";
  renderizarLista();
 }
+
 function fecharSidebar(){
  document.getElementById("sidebar").style.display="none";
 }
@@ -182,6 +187,7 @@ function renderizarLista(f=""){
  });
 }
 
+/* 🔥 SALVAR NOVAS MEDICAÇÕES */
 async function salvarNovasMedicacoes(){
  for(const b of document.querySelectorAll(".medicacao-box")){
   const nome=b.querySelector(".med1").value.trim();
@@ -195,7 +201,8 @@ async function salvarNovasMedicacoes(){
 
   if(q.empty){
    await db.collection("medicacoes").add({
-    nome, uso, categoria:"⭐ Adicionadas pelos usuários"
+    nome, uso,
+    categoria:"⭐ Adicionadas pelos usuários"
    });
   }
  }
@@ -212,7 +219,9 @@ async function gerarPDF(){
  const font=await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
  const p=pdf.getPages()[0];
 
- p.drawText(document.getElementById("nomePaciente").value,{x:188,y:1361,size:28,font});
+ p.drawText(document.getElementById("nomePaciente").value,{
+   x:188,y:1361,size:28,font
+ });
 
  const bytes=await pdf.save();
  const a=document.createElement("a");
