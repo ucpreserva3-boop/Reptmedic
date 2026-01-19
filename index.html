@@ -249,8 +249,9 @@ function medicacaoExiste(nome, uso){
     m.n.toLowerCase().trim() === nome.toLowerCase().trim() &&
     m.u.toLowerCase().trim() === uso.toLowerCase().trim()
   );
-  
-  async function salvarMedicacaoFirebase(nome, uso){
+}
+
+async function salvarMedicacaoFirebase(nome, uso){
   const user = auth.currentUser;
   if(!user) return;
 
