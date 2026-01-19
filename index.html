@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Receita Médica</title>
+<title>Preenchimento de Receita</title>
 
 <!-- 🔥 FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <!-- PDF-LIB -->
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
@@ -17,10 +18,13 @@ body{margin:0;font-family:Arial,sans-serif;background:#f4f4f4}
 
 /* LOGIN */
 #login{
- max-width:360px;margin:120px auto;background:#fff;
- padding:20px;border-radius:8px
+ max-width:380px;
+ margin:120px auto;
+ background:#fff;
+ padding:20px;
+ border-radius:8px
 }
-#login h2{text-align:center}
+#login h2{text-align:center;margin-bottom:16px}
 #login input{width:100%;padding:10px;margin-bottom:10px}
 #erro{color:red;text-align:center}
 
@@ -31,31 +35,51 @@ h1{text-align:center;margin-bottom:20px}
 label{font-weight:bold;display:block;margin-bottom:6px}
 
 input,select,textarea{
- width:100%;padding:12px;font-size:16px;box-sizing:border-box
+ width:100%;
+ padding:12px;
+ font-size:16px;
+ box-sizing:border-box
 }
 
 button{
- padding:12px;font-size:16px;border:none;border-radius:6px;
- cursor:pointer;background:#27ae60;color:#fff
+ padding:12px;
+ font-size:16px;
+ border:none;
+ border-radius:6px;
+ cursor:pointer;
+ background:#27ae60;
+ color:#fff
 }
 
 .sair{background:#e74c3c;margin-bottom:16px}
-.btn-add{background:#2980b9}
-.btn-lupa{background:#34495e}
-.btn-apagar{background:#e74c3c}
 
 .medicacao-box{background:#fff;border:1px solid #ccc;padding:10px;margin-bottom:10px}
 .medicacao-linha{display:flex;gap:6px;align-items:center}
 .num{width:32px;font-weight:bold;text-align:center}
+.btn-apagar{background:#e74c3c}
+.btn-lupa{background:#34495e}
+.btn-add{background:#2980b9;margin-top:8px}
+
+/* DATA */
+.data-box{display:flex;gap:10px}
+.data-box input{text-align:center}
 
 /* SIDEBAR */
-.sidebar{position:fixed;inset:0;background:#fff;display:none;flex-direction:column;z-index:999}
+.sidebar{
+ position:fixed;
+ inset:0;
+ background:#fff;
+ z-index:999;
+ display:none;
+ flex-direction:column;
+}
 .sidebar-topo{background:#e74c3c;padding:6px 10px}
-.sidebar-topo button{background:#c0392b}
+.sidebar-topo button{background:#c0392b;padding:6px 10px;font-size:14px}
 .sidebar-busca{padding:8px}
-.sidebar-lista{flex:1;overflow-y:auto;padding:8px}
-.categoria{font-weight:bold;margin-top:10px}
-.item{padding:6px;border-bottom:1px dashed #ccc;cursor:pointer}
+.sidebar-busca input{padding:6px 8px;font-size:13px;height:32px}
+.sidebar-lista{flex:1;overflow-y:auto;padding:6px 8px}
+.categoria{font-weight:bold;margin:10px 0 4px;font-size:14px}
+.item{padding:6px 4px;border-bottom:1px dashed #ccc;font-size:14px;cursor:pointer}
 .item:hover{background:#f0f0f0}
 </style>
 </head>
@@ -78,19 +102,17 @@ button{
 <button class="sair" onclick="logout()">Sair</button>
 
 <div class="campo">
-<label>PDF base</label>
-<div style="background:#e8f6ff;padding:10px;border-radius:6px">
-📄 Receita padrão carregada automaticamente
-</div>
+<label>Selecionar PDF base</label>
+<input type="file" id="pdfBase" accept="application/pdf">
 </div>
 
 <div class="campo">
-<label>Nome do paciente</label>
+<label>NOME DO PACIENTE</label>
 <input id="nomePaciente" oninput="this.value=this.value.toUpperCase()">
 </div>
 
 <div class="campo">
-<label>Uso</label>
+<label>USO</label>
 <select id="uso">
 <option value="">Selecione</option>
 <option>USO ORAL</option>
@@ -99,21 +121,21 @@ button{
 </div>
 
 <div class="campo">
-<label>Medicações</label>
+<label>MEDICAÇÕES</label>
 <div id="listaMedicacoes"></div>
-<button class="btn-add" onclick="adicionarMedicacao()">➕ Adicionar</button>
+<button type="button" class="btn-add" onclick="adicionarMedicacao()">➕ Adicionar Medicação</button>
 </div>
 
 <div class="campo">
-<label>Data</label>
-<div style="display:flex;gap:6px">
+<label>DATA</label>
+<div class="data-box">
 <input id="dataDia" placeholder="DD" maxlength="2">
 <input id="dataMes" placeholder="MM" maxlength="2">
 <input id="dataAno" placeholder="AAAA" maxlength="4">
 </div>
 </div>
 
-<button onclick="gerarPDF()">📄 Gerar PDF</button>
+<button type="button" onclick="gerarPDF()">📄 Gerar PDF</button>
 </div>
 
 <!-- SIDEBAR -->
@@ -130,70 +152,49 @@ button{
 <script>
 /* 🔥 FIREBASE CONFIG */
 firebase.initializeApp({
- apiKey: "AIzaSyAhWOQRO47_RiBjj2RG4BXf7lhYy6KNiDg",
- authDomain: "receituario-3c175.firebaseapp.com",
- projectId: "receituario-3c175"
+ apiKey: "SUA_API_KEY",
+ authDomain: "SEU_PROJECT.firebaseapp.com",
+ projectId: "SEU_PROJECT"
 });
-
 const auth = firebase.auth();
+const db   = firebase.firestore();
 
-/* 🔐 LOGIN */
+/* LOGIN */
 function login(){
- const email = document.getElementById("email").value.trim();
- const senha = document.getElementById("senha").value.trim();
- const erro  = document.getElementById("erro");
-
- erro.innerText = "";
-
- if(!email || !senha){
-  erro.innerText = "Informe email e senha";
-  return;
- }
-
- auth.signInWithEmailAndPassword(email, senha)
-  .catch(() => erro.innerText = "Email ou senha inválidos");
+ erro.innerText="";
+ auth.signInWithEmailAndPassword(email.value,senha.value)
+  .catch(()=>erro.innerText="Email ou senha inválidos");
 }
-
-function logout(){
- auth.signOut();
-}
-
-/* CONTROLE DE ACESSO (BUG CORRIGIDO) */
-auth.onAuthStateChanged(user=>{
- const loginDiv = document.getElementById("login");
- const appDiv   = document.getElementById("app");
-
- if(user){
-  loginDiv.style.display = "none";
-  appDiv.style.display   = "block";
- }else{
-  loginDiv.style.display = "block";
-  appDiv.style.display   = "none";
- }
+function logout(){auth.signOut();}
+auth.onAuthStateChanged(u=>{
+ login.style.display=u?"none":"block";
+ app.style.display=u?"block":"none";
+ if(u) carregarMedicacoes();
 });
 
-/* ===== APP ===== */
+/* ===== SISTEMA ===== */
 const LIMITE = 8;
 let campoAtual = null;
+let banco = [];
 
-const banco = [
- {c:"💊 Exemplo", n:"Paracetamol 500mg", u:"Tomar 1 CP de 6/6h"}
-];
+/* Primeira letra maiúscula */
+function cap(t){return t?t[0].toUpperCase()+t.slice(1):""}
 
+/* MEDICAÇÕES */
 function adicionarMedicacao(){
  if(document.querySelectorAll(".medicacao-box").length>=LIMITE)
-  return alert("Limite máximo de 8 medicações");
+  return alert("Limite máximo de 8 medicações.");
 
  const d=document.createElement("div");
  d.className="medicacao-box";
  d.innerHTML=`
  <div class="medicacao-linha">
   <div class="num"></div>
-  <input class="med1" placeholder="Medicação">
+  <input class="med1" placeholder="Medicação" oninput="this.value=cap(this.value)">
   <button class="btn-lupa" onclick="abrirSidebar(this)">🔍</button>
-  <button class="btn-apagar" onclick="this.closest('.medicacao-box').remove();numerar()">✖</button>
+  <button class="btn-apagar" onclick="this.closest('.medicacao-box').remove();numerar()">APAGAR</button>
  </div>
- <textarea class="med2" placeholder="Uso"></textarea>`;
+ <textarea class="med2" placeholder="Uso" oninput="this.value=cap(this.value)"></textarea>`;
  listaMedicacoes.appendChild(d);
  numerar();
 }
@@ -202,6 +203,7 @@ function numerar(){
  document.querySelectorAll(".num").forEach((e,i)=>e.textContent=(i+1)+")");
 }
 
+/* SIDEBAR */
 function abrirSidebar(btn){
  campoAtual=btn.closest(".medicacao-box");
  sidebar.style.display="flex";
@@ -209,38 +211,67 @@ function abrirSidebar(btn){
 }
 function fecharSidebar(){sidebar.style.display="none";}
 
+/* FIRESTORE */
+async function carregarMedicacoes(){
+ const snap=await db.collection("medicacoes").get();
+ banco=snap.docs.map(d=>d.data());
+}
+
 function renderizarLista(f=""){
  listaSidebar.innerHTML="";
  let cat="";
- banco.filter(m=>(m.n+m.u).toLowerCase().includes(f.toLowerCase()))
+ banco.filter(m=>(m.nome+m.uso).toLowerCase().includes(f.toLowerCase()))
  .forEach(m=>{
-  if(m.c!==cat){
-   cat=m.c;
+  if(m.categoria!==cat){
+   cat=m.categoria;
    const c=document.createElement("div");
    c.className="categoria";
-   c.innerText=cat;
+   c.textContent=cat;
    listaSidebar.appendChild(c);
   }
   const i=document.createElement("div");
   i.className="item";
-  i.innerHTML=`<strong>${m.n}</strong><br>${m.u}`;
+  i.innerHTML=`<strong>${m.nome}</strong><br>${m.uso}`;
   i.onclick=()=>{
-   campoAtual.querySelector(".med1").value=m.n;
-   campoAtual.querySelector(".med2").value=m.u;
+   campoAtual.querySelector(".med1").value=m.nome;
+   campoAtual.querySelector(".med2").value=m.uso;
    fecharSidebar();
   };
   listaSidebar.appendChild(i);
  });
 }
 
-/* 📄 PDF BASE AUTOMÁTICO */
-async function gerarPDF(){
- const response = await fetch("pdf/receita_base.pdf");
- if(!response.ok) return alert("PDF base não encontrado");
+/* SALVAR NOVAS MEDICAÇÕES */
+async function salvarNovasMedicacoes(){
+ for(const b of document.querySelectorAll(".medicacao-box")){
+  const nome=b.querySelector(".med1").value.trim();
+  const uso=b.querySelector(".med2").value.trim();
+  if(!nome||!uso) continue;
 
- const pdf = await PDFLib.PDFDocument.load(await response.arrayBuffer());
- const font = await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
- const p = pdf.getPages()[0];
+  const q=await db.collection("medicacoes")
+   .where("nome","==",nome)
+   .where("uso","==",uso)
+   .get();
+
+  if(q.empty){
+   await db.collection("medicacoes").add({
+    nome,uso,
+    categoria:"⭐ Adicionadas pelos usuários"
+   });
+  }
+ }
+}
+
+/* PDF (PDF escolhido pelo usuário) */
+async function gerarPDF(){
+ await salvarNovasMedicacoes();
+
+ const file=pdfBase.files[0];
+ if(!file) return alert("Selecione o PDF base.");
+
+ const pdf=await PDFLib.PDFDocument.load(await file.arrayBuffer());
+ const font=await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
+ const p=pdf.getPages()[0];
 
  p.drawText(nomePaciente.value,{x:188,y:1361,size:28,font});
  p.drawText(nomePaciente.value,{x:1370,y:1361,size:28,font});
@@ -249,6 +280,7 @@ async function gerarPDF(){
  document.querySelectorAll(".medicacao-box").forEach((b,i)=>{
   const t=`${i+1}) ${b.querySelector(".med1").value}\n${b.querySelector(".med2").value}`;
   p.drawText(t,{x:157,y,size:28,font,lineHeight:30});
+  p.drawText(t,{x:1339,y,size:28,font,lineHeight:30});
   y-=120;
  });
 
