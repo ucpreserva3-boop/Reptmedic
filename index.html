@@ -240,7 +240,7 @@ const banco=[
 {c:"🩸 Hematológicos / Vasculares",n:"Sulfato Ferroso 40mg – 60 CP",u:"Tomar 1 CP VO antes do almoço e jantar"},
 {c:"🩸 Hematológicos / Vasculares",n:"Diosmina + Hesperidina 450mg + 50mg – 60+60+60 CP",u:"Tomar 1 CP de 12/12h por 3 meses"},
 {c:"💊 Vitaminas",n:"Complexo B 30mg – 30/30/30 CP",u:"Tomar 1 CP ao dia"},
-{c:"Medicações recém adicionadas",n:"Nistatina suspensão 100.000 UI/ml",u:"Tomar VO 3 vezes ao dia por 7 dias"},
+{c:"⭐ Medicações recém adicionadas",n:"Nistatina suspensão 100.000 UI/ml",u:"Tomar VO 3 vezes ao dia por 7 dias"},
 {c:"Medicações recém adicionadas",n:"Omeprazol 20mg – 30/30/30 CP",u:"Tomar 1 CP pela manhã"},
 {c:"Medicações recém adicionadas",n:"Alopurinol 300mg – 30 CP",u:"Tomar 1 CP 1 vez ao dia"}
 ];
@@ -258,7 +258,7 @@ async function salvarMedicacaoFirebase(nome, uso){
   await db.collection("medicacoes").add({
     nome: nome,
     uso: uso,
-    categoria: "Medicações recém adicionadas",
+    categoria: "⭐ Medicações recém adicionadas",
     criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
     criadoPor: user.email
   });
@@ -337,7 +337,7 @@ async function gerarPDF(){
 
      // adiciona no banco local (sidebar atual)
      banco.push({
-       c: "Medicações recém adicionadas",
+       c: "⭐ Medicações recém adicionadas",
        n: nome,
        u: uso
      });
@@ -436,5 +436,6 @@ function logout(){
 
 </body>
 </html>
+
 
 
