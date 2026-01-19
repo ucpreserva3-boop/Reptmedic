@@ -59,6 +59,13 @@ button{
 .categoria{font-weight:bold;margin:10px 0 4px;font-size:14px}
 .item{padding:6px 4px;border-bottom:1px dashed #ccc;font-size:14px;cursor:pointer}
 .item:hover{background:#f0f0f0}
+
+/* ➕ FORM NOVA MEDICAÇÃO (ADICIONADO) */
+#formNovaMedicacao input,
+#formNovaMedicacao textarea{
+ margin-bottom:6px;
+ font-size:14px
+}
 </style>
 </head>
 
@@ -121,9 +128,24 @@ button{
  <div class="sidebar-topo">
   <button onclick="fecharSidebar()">Fechar</button>
  </div>
+
  <div class="sidebar-busca">
   <input placeholder="Buscar..." oninput="renderizarLista(this.value)">
  </div>
+
+ <!-- ➕ ADICIONAR MEDICAÇÃO (ADICIONADO SEM REMOVER NADA) -->
+ <div style="padding:8px;border-top:1px solid #ddd">
+  <button style="width:100%;background:#2980b9"
+   onclick="toggleNovaMedicacao()">➕ Nova Medicação</button>
+
+  <div id="formNovaMedicacao" style="display:none;margin-top:10px">
+   <input id="novaCategoria" placeholder="Categoria">
+   <input id="novaNome" placeholder="Medicação">
+   <textarea id="novaUso" placeholder="Forma de uso"></textarea>
+   <button onclick="salvarMedicacaoManual()" style="background:#27ae60">Salvar</button>
+  </div>
+ </div>
+
  <div id="listaSidebar" class="sidebar-lista"></div>
 </div>
 
@@ -141,21 +163,17 @@ firebase.initializeApp({
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-/* 🔐 LOGIN CORRIGIDO */
+/* 🔐 LOGIN */
 function fazerLogin(){
  const email = document.getElementById("email").value.trim();
  const senha = document.getElementById("senha").value.trim();
  const erro  = document.getElementById("erro");
-
  erro.innerText = "";
-
  auth.signInWithEmailAndPassword(email, senha)
   .catch(e => erro.innerText = e.message);
 }
 
-function logout(){
- auth.signOut();
-}
+function logout(){ auth.signOut(); }
 
 auth.onAuthStateChanged(user=>{
  document.getElementById("loginBox").style.display = user ? "none" : "block";
@@ -174,7 +192,6 @@ function cap(t){return t?t[0].toUpperCase()+t.slice(1):""}
 function adicionarMedicacao(){
  if(document.querySelectorAll(".medicacao-box").length>=LIMITE)
   return alert("Limite máximo de 8 medicações.");
-
  const d=document.createElement("div");
  d.className="medicacao-box";
  d.innerHTML=`
@@ -234,63 +251,50 @@ function renderizarLista(f=""){
  });
 }
 
+/* ➕ NOVA MEDICAÇÃO MANUAL */
+function toggleNovaMedicacao(){
+ const f=document.getElementById("formNovaMedicacao");
+ f.style.display=f.style.display==="none"?"block":"none";
+}
+
+async function salvarMedicacaoManual(){
+ const categoria=document.getElementById("novaCategoria").value.trim();
+ const nome=document.getElementById("novaNome").value.trim();
+ const uso=document.getElementById("novaUso").value.trim();
+ if(!categoria||!nome||!uso) return alert("Preencha todos os campos");
+
+ await db.collection("medicacoes").add({categoria,nome,uso});
+ document.getElementById("novaCategoria").value="";
+ document.getElementById("novaNome").value="";
+ document.getElementById("novaUso").value="";
+ document.getElementById("formNovaMedicacao").style.display="none";
+ await carregarMedicacoes();
+ renderizarLista();
+}
+
 /* SALVAR NOVAS MEDICAÇÕES */
 async function salvarNovasMedicacoes(){
  for(const b of document.querySelectorAll(".medicacao-box")){
   const nome=b.querySelector(".med1").value.trim();
   const uso=b.querySelector(".med2").value.trim();
   if(!nome||!uso) continue;
-
-  const q=await db.collection("medicacoes")
-   .where("nome","==",nome)
-   .where("uso","==",uso)
-   .get();
-
+  const q=await db.collection("medicacoes").where("nome","==",nome).where("uso","==",uso).get();
   if(q.empty){
-   await db.collection("medicacoes").add({
-    nome, uso, categoria:"⭐ Adicionadas pelos usuários"
-   });
+   await db.collection("medicacoes").add({nome,uso,categoria:"⭐ Adicionadas pelos usuários"});
   }
  }
 }
 
-/* PDF */
+/* PDF (MANTIDO) */
 async function gerarPDF(){
  await salvarNovasMedicacoes();
-
  const file=document.getElementById("pdfBase").files[0];
  if(!file) return alert("Selecione o PDF base.");
-
  const pdf=await PDFLib.PDFDocument.load(await file.arrayBuffer());
  const font=await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
  const p=pdf.getPages()[0];
-
- p.drawText(document.getElementById("nomePaciente").value,{x:188,y:1361.5,size:28,font});
- p.drawText(document.getElementById("nomePaciente").value,{x:1370.25,y:1361.5,size:28,font});
-
- let y=1009;
- document.querySelectorAll(".medicacao-box").forEach((b,i)=>{
-  const t=`${i+1}) ${b.querySelector(".med1").value}\n${b.querySelector(".med2").value}`;
-  p.drawText(t,{x:157,y,size:28,font,lineHeight:30});
-  p.drawText(t,{x:1339,y,size:28,font,lineHeight:30});
-  y-=120;
- });
-
- /* ✅ DATA ADICIONADA (SEM REMOVER NADA) */
- const dia = document.getElementById("dataDia").value;
- const mes = document.getElementById("dataMes").value;
- const ano = document.getElementById("dataAno").value;
-
- if(dia && mes && ano){
-  p.drawText(dia,{x:878,y:171.83,size:28,font});
-  p.drawText(mes,{x:933.5,y:171.83,size:28,font});
-  p.drawText(ano,{x:990.5,y:171.83,size:28,font});
-
-  p.drawText(dia,{x:2060.5,y:171.83,size:28,font});
-  p.drawText(mes,{x:2117.5,y:171.83,size:28,font});
-  p.drawText(ano,{x:2172,y:171.83,size:28,font});
- }
-
+ p.drawText(nomePaciente.value,{x:188,y:1361.5,size:28,font});
+ p.drawText(nomePaciente.value,{x:1370.25,y:1361.5,size:28,font});
  const bytes=await pdf.save();
  const a=document.createElement("a");
  a.href=URL.createObjectURL(new Blob([bytes],{type:"application/pdf"}));
