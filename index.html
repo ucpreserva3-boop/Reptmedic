@@ -181,6 +181,13 @@ button{
 </div>
 
 <button type="button" onclick="gerarPDF()">📄 Gerar PDF</button>
+
+<button type="button"
+        style="background:#e67e22;margin-top:10px"
+        onclick="limparDados()">
+🧹 Limpar dados
+</button>
+
 </div>
 
 <!-- SIDEBAR -->
@@ -643,6 +650,25 @@ if(id){
  aTag.click();
  URL.revokeObjectURL(aTag.href);
 }
+function limparDados(){
+  if(!confirm("Deseja limpar todos os campos da receita?")) return;
+
+  // Nome do paciente
+  document.getElementById("nomePaciente").value = "";
+
+  // Uso
+  document.getElementById("uso").value = "";
+
+  // Data
+  document.getElementById("dataDia").value = "";
+  document.getElementById("dataMes").value = "";
+  document.getElementById("dataAno").value = "";
+
+  // Medicações
+  document.getElementById("listaMedicacoes").innerHTML = "";
+
+  // PDF base NÃO é apagado
+}
 /* FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyAhWOQRO47_RiBjj2RG4BXf7lhYy6KNiDg",
@@ -690,6 +716,7 @@ function logout(){
 
 </body>
 </html>
+
 
 
 
