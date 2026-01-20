@@ -165,6 +165,32 @@ button{
   <div class="sidebar-busca">
     <input placeholder="Buscar..." oninput="renderizarLista(this.value)">
   </div>
+  <div style="padding:8px;border-bottom:1px solid #ddd">
+  <button type="button"
+    style="background:#2980b9;width:100%;font-size:14px"
+    onclick="abrirFormularioManual()">
+    ➕ Adicionar medicação manualmente
+  </button>
+</div>
+
+<div id="formManual" style="display:none;padding:8px;border-bottom:1px solid #ddd">
+  <select id="categoriaSelect" onchange="verificarNovaCategoria()"
+    style="margin-bottom:6px">
+  </select>
+
+  <input id="novaCategoria" placeholder="Nova categoria"
+    style="display:none;margin-bottom:6px">
+
+  <input id="novaMedicacao" placeholder="Nome da medicação"
+    style="margin-bottom:6px">
+
+  <textarea id="novoUso" placeholder="Modo de uso"></textarea>
+
+  <button style="margin-top:6px;width:100%"
+    onclick="salvarMedicacaoManual()">
+    Salvar medicação
+  </button>
+</div>
   <div id="listaSidebar" class="sidebar-lista"></div>
 </div>
 
@@ -324,6 +350,100 @@ function abrirSidebar(btn){
 }
 function fecharSidebar(){
  document.getElementById("sidebar").style.display="none";
+}
+
+/* 🔥 FORMULÁRIO MANUAL DA SIDEBAR */
+
+function abrirFormularioManual(){
+  const f = document.getElementById("formManual");
+  f.style.display = f.style.display === "none" ? "block" : "none";
+  carregarCategorias();
+}
+
+function carregarCategorias(){
+  const select = document.getElementById("categoriaSelect");
+  select.innerHTML = "";
+
+  const categorias = [...new Set(banco.map(m => m.c))];
+
+  categorias.forEach(c=>{
+    const o = document.createElement("option");
+    o.value = c;
+    o.textContent = c;
+    select.appendChild(o);
+  });
+
+  const nova = document.createElement("option");
+  nova.value = "__nova__";
+  nova.textContent = "➕ Nova categoria";
+  select.appendChild(nova);
+
+  document.getElementById("novaCategoria").style.display = "none";
+}
+
+function verificarNovaCategoria(){
+  const v = document.getElementById("categoriaSelect").value;
+  document.getElementById("novaCategoria").style.display =
+    v === "__nova__" ? "block" : "none";
+}
+
+async function salvarMedicacaoManual(){
+  const catSelect = document.getElementById("categoriaSelect").value;
+  const novaCat   = document.getElementById("novaCategoria").value.trim();
+  const nome      = document.getElementById("novaMedicacao").value.trim();
+  const uso       = document.getElementById("novoUso").value.trim();
+
+  if(!nome || !uso){
+    alert("Preencha a medicação e o uso.");
+    return;
+  }
+
+  const categoria = catSelect === "__nova__" ? novaCat : catSelect;
+
+  if(!categoria){
+    alert("Informe a categoria.");
+    return;
+  }
+
+  if(medicacaoExiste(nome, uso)){
+    alert("Essa medicação já existe.");
+    return;
+  }
+
+  const id = await salvarMedicacaoFirebase(nome, uso);
+
+  if(id){
+    banco.push({
+      id: id,
+      c: categoria,
+      n: nome,
+      u: uso
+    });
+
+    renderizarLista();
+    document.getElementById("formManual").style.display = "none";
+  }
+}
+
+function carregarCategorias(){
+  const select = document.getElementById("categoriaSelect");
+  select.innerHTML = "";
+
+  const categorias = [...new Set(banco.map(m => m.c))];
+
+  categorias.forEach(c=>{
+    const o = document.createElement("option");
+    o.value = c;
+    o.textContent = c;
+    select.appendChild(o);
+  });
+
+  const nova = document.createElement("option");
+  nova.value = "__nova__";
+  nova.textContent = "➕ Nova categoria";
+  select.appendChild(nova);
+
+  document.getElementById("novaCategoria").style.display = "none";
 }
 
 function renderizarLista(f=""){
