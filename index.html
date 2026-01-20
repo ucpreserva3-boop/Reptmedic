@@ -286,19 +286,19 @@ async function carregarMedicacoesFirebase(){
   });
 }
 
-async function salvarMedicacaoFirebase(nome, uso){
+async function salvarMedicacaoFirebase(nome, uso, categoria){
   const user = auth.currentUser;
   if(!user) return null;
 
   const docRef = await db.collection("medicacoes").add({
     nome: nome,
     uso: uso,
-    categoria: "⭐ Medicações recém adicionadas",
+    categoria: categoria, // ✅ agora salva a categoria correta
     criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
     criadoPor: user.email
   });
 
-  return docRef.id; // 🔥 ESSENCIAL
+  return docRef.id;
 }
 
 /* MEDICAÇÕES */
@@ -401,7 +401,7 @@ async function salvarMedicacaoManual(){
     return;
   }
 
-  const id = await salvarMedicacaoFirebase(nome, uso);
+const id = await salvarMedicacaoFirebase(nome, uso, categoria);
 
   if(id){
     banco.push({
@@ -610,7 +610,11 @@ async function gerarPDF(){
    const uso  = b.querySelector(".med2").value.trim();
 
    if(nome && uso && !medicacaoExiste(nome, uso)){
-     const id = await salvarMedicacaoFirebase(nome, uso);
+const id = await salvarMedicacaoFirebase(
+  nome,
+  uso,
+  "⭐ Medicações recém adicionadas"
+);
 
 if(id){
   banco.push({
@@ -745,6 +749,7 @@ function logout(){
 
 </body>
 </html>
+
 
 
 
