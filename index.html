@@ -439,16 +439,7 @@ async function salvarMedicacaoManual(){
     document.getElementById("formManual").style.display = "none";
   }
 }
-
-function renderizarLista(f=""){
-  const lista = document.getElementById("listaSidebar");
-  lista.innerHTML = "";
-
-  // Agrupar por categoria
-  const categorias = {};
-
-  banco
-  async function mudarCategoria(index, novaCategoria){
+ async function mudarCategoria(index, novaCategoria){
   const m = banco[index];
   if(!m || !novaCategoria) return;
 
@@ -462,11 +453,21 @@ function renderizarLista(f=""){
 
   renderizarLista();
 }
+
+function renderizarLista(f=""){
+  const lista = document.getElementById("listaSidebar");
+  lista.innerHTML = "";
+
+  // Agrupar por categoria
+  const categorias = {};
+
+  banco
     .filter(m => (m.n + m.u).toLowerCase().includes(f.toLowerCase()))
     .forEach(m => {
       if(!categorias[m.c]) categorias[m.c] = [];
       categorias[m.c].push(m);
     });
+
 
   Object.keys(categorias).forEach(cat => {
     // Cabeçalho da categoria (aba)
@@ -483,6 +484,7 @@ function renderizarLista(f=""){
 
     categorias[cat].forEach(m => {
       const i = document.createElement("div");
+	  i.className = "item";
 const categoriasUnicas = [...new Set(banco.map(x => x.c))];
 
 i.innerHTML = `
@@ -506,7 +508,7 @@ i.innerHTML = `
 `;
 
       i.onclick = (e) => {
-        if(e.target.tagName === "BUTTON") return;
+        if(e.target.tagName === "BUTTON" || e.target.tagName === "SELECT") return;
         campoAtual.querySelector(".med1").value = m.n;
         campoAtual.querySelector(".med2").value = m.u;
         fecharSidebar();
