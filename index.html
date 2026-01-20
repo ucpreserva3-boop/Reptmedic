@@ -208,10 +208,6 @@ function cap(t){
  return t[0].toUpperCase() + t.slice(1);
 }
 
-function listarCategorias(){
-  return [...new Set(banco.map(m => m.c))];
-}
-
 /* BANCO DE MEDICAÇÕES */
 const banco=[
 {c:"❤️ Hipertensão / Cardiovascular",n:"Hidroclorotiazida 25mg – 60+60+60+60 CP",u:"Tomar 1 CP cedo e 1 CP à noite"},
@@ -270,6 +266,12 @@ const banco=[
 {c:"🩸 Hematológicos / Vasculares",n:"Diosmina + Hesperidina 450mg + 50mg – 60+60+60 CP",u:"Tomar 1 CP de 12/12h por 3 meses"},
 {c:"💊 Vitaminas",n:"Complexo B 30mg – 30/30/30 CP",u:"Tomar 1 CP ao dia"}
 ];
+function medicacaoExiste(nome, uso){
+  return banco.some(m =>
+    m.n.toLowerCase().trim() === nome.toLowerCase().trim() &&
+    m.u.toLowerCase().trim() === uso.toLowerCase().trim()
+  );
+}
 function medicacaoExiste(nome, uso){
   return banco.some(m =>
     m.n.toLowerCase().trim() === nome.toLowerCase().trim() &&
@@ -458,15 +460,6 @@ i.className="item";
 i.innerHTML=`
   <strong>${m.n}</strong><br>
   ${m.u}
-
-  <select style="margin-top:6px;width:100%;font-size:13px"
-    onchange="trocarCategoria(${banco.indexOf(m)}, this.value)">
-    ${listarCategorias().map(c =>
-      `<option value="${c}" ${c===m.c?"selected":""}>${c}</option>`
-    ).join("")}
-    <option value="__nova__">➕ Nova categoria</option>
-  </select>
-
   <div style="margin-top:6px;display:flex;gap:6px">
     <button style="background:#2980b9;font-size:12px"
       onclick="editarMedicacao(${banco.indexOf(m)})">✏️ Editar</button>
@@ -483,29 +476,6 @@ i.onclick=(e)=>{
   l.appendChild(i);
  });
  
-}
-async function trocarCategoria(index, novaCategoria){
-  const m = banco[index];
-  if(!m) return;
-
-  if(novaCategoria === "__nova__"){
-    const nome = prompt("Nome da nova categoria:");
-    if(!nome){
-      renderizarLista();
-      return;
-    }
-    novaCategoria = nome;
-  }
-
-  m.c = novaCategoria;
-
-  if(m.id){
-    await db.collection("medicacoes").doc(m.id).update({
-      categoria: novaCategoria
-    });
-  }
-
-  renderizarLista();
 }
 async function editarMedicacao(index){
   const m = banco[index];
@@ -662,10 +632,3 @@ function logout(){
 
 </body>
 </html>
-
-
-
-
-
-
-
