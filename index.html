@@ -411,8 +411,24 @@ async function salvarMedicacaoManual(){
       u: uso
     });
 
-    renderizarLista();
-    document.getElementById("formManual").style.display = "none";
+renderizarLista();
+
+// 🔥 LIMPAR CAMPOS PARA PRÓXIMA MEDICAÇÃO
+document.getElementById("novaMedicacao").value = "";
+document.getElementById("novoUso").value = "";
+
+const selectCat = document.getElementById("categoriaSelect");
+const inputNova = document.getElementById("novaCategoria");
+
+// Se estava criando nova categoria
+if(selectCat.value === "__nova__"){
+  inputNova.value = "";
+  inputNova.focus();
+}else{
+  // mantém categoria e foca no nome da medicação
+  document.getElementById("novaMedicacao").focus();
+}
+
   }
 }
  async function mudarCategoria(index, novaCategoria){
@@ -720,6 +736,7 @@ function logout(){
 
 </body>
 </html>
+
 
 
 
