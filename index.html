@@ -448,6 +448,20 @@ function renderizarLista(f=""){
   const categorias = {};
 
   banco
+  async function mudarCategoria(index, novaCategoria){
+  const m = banco[index];
+  if(!m || !novaCategoria) return;
+
+  m.c = novaCategoria;
+
+  if(m.id){
+    await db.collection("medicacoes").doc(m.id).update({
+      categoria: novaCategoria
+    });
+  }
+
+  renderizarLista();
+}
     .filter(m => (m.n + m.u).toLowerCase().includes(f.toLowerCase()))
     .forEach(m => {
       if(!categorias[m.c]) categorias[m.c] = [];
@@ -469,17 +483,27 @@ function renderizarLista(f=""){
 
     categorias[cat].forEach(m => {
       const i = document.createElement("div");
-      i.className = "item";
-      i.innerHTML = `
-        <strong>${m.n}</strong><br>
-        ${m.u}
-        <div style="margin-top:6px;display:flex;gap:6px">
-          <button style="background:#2980b9;font-size:12px"
-            onclick="editarMedicacao(${banco.indexOf(m)})">✏️ Editar</button>
-          <button style="background:#e74c3c;font-size:12px"
-            onclick="apagarMedicacao(${banco.indexOf(m)})">🗑️ Apagar</button>
-        </div>
-      `;
+const categoriasUnicas = [...new Set(banco.map(x => x.c))];
+
+i.innerHTML = `
+  <strong>${m.n}</strong><br>
+  ${m.u}
+
+  <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
+    <select style="font-size:12px"
+      onchange="mudarCategoria(${banco.indexOf(m)}, this.value)">
+      ${categoriasUnicas.map(c =>
+        `<option value="${c}" ${c===m.c?"selected":""}>${c}</option>`
+      ).join("")}
+    </select>
+
+    <button style="background:#2980b9;font-size:12px"
+      onclick="editarMedicacao(${banco.indexOf(m)})">✏️ Editar</button>
+
+    <button style="background:#e74c3c;font-size:12px"
+      onclick="apagarMedicacao(${banco.indexOf(m)})">🗑️ Apagar</button>
+  </div>
+`;
 
       i.onclick = (e) => {
         if(e.target.tagName === "BUTTON") return;
@@ -664,6 +688,7 @@ function logout(){
 
 </body>
 </html>
+
 
 
 
