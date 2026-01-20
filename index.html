@@ -212,18 +212,6 @@ function listarCategorias(){
   return [...new Set(banco.map(m => m.c))];
 }
 
-function cap(t){
- if(!t) return "";
- return t[0].toUpperCase() + t.slice(1);
-}
-
-function listarCategorias(){
-  return [...new Set(banco.map(m => m.c))];
-}
-
-/* BANCO DE MEDICAÇÕES */
-const banco=[
-
 /* BANCO DE MEDICAÇÕES */
 const banco=[
 {c:"❤️ Hipertensão / Cardiovascular",n:"Hidroclorotiazida 25mg – 60+60+60+60 CP",u:"Tomar 1 CP cedo e 1 CP à noite"},
@@ -282,12 +270,6 @@ const banco=[
 {c:"🩸 Hematológicos / Vasculares",n:"Diosmina + Hesperidina 450mg + 50mg – 60+60+60 CP",u:"Tomar 1 CP de 12/12h por 3 meses"},
 {c:"💊 Vitaminas",n:"Complexo B 30mg – 30/30/30 CP",u:"Tomar 1 CP ao dia"}
 ];
-function medicacaoExiste(nome, uso){
-  return banco.some(m =>
-    m.n.toLowerCase().trim() === nome.toLowerCase().trim() &&
-    m.u.toLowerCase().trim() === uso.toLowerCase().trim()
-  );
-}
 function medicacaoExiste(nome, uso){
   return banco.some(m =>
     m.n.toLowerCase().trim() === nome.toLowerCase().trim() &&
