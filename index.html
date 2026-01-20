@@ -208,6 +208,22 @@ function cap(t){
  return t[0].toUpperCase() + t.slice(1);
 }
 
+function listarCategorias(){
+  return [...new Set(banco.map(m => m.c))];
+}
+
+function cap(t){
+ if(!t) return "";
+ return t[0].toUpperCase() + t.slice(1);
+}
+
+function listarCategorias(){
+  return [...new Set(banco.map(m => m.c))];
+}
+
+/* BANCO DE MEDICAÇÕES */
+const banco=[
+
 /* BANCO DE MEDICAÇÕES */
 const banco=[
 {c:"❤️ Hipertensão / Cardiovascular",n:"Hidroclorotiazida 25mg – 60+60+60+60 CP",u:"Tomar 1 CP cedo e 1 CP à noite"},
@@ -460,6 +476,15 @@ i.className="item";
 i.innerHTML=`
   <strong>${m.n}</strong><br>
   ${m.u}
+
+  <select style="margin-top:6px;width:100%;font-size:13px"
+    onchange="trocarCategoria(${banco.indexOf(m)}, this.value)">
+    ${listarCategorias().map(c =>
+      `<option value="${c}" ${c===m.c?"selected":""}>${c}</option>`
+    ).join("")}
+    <option value="__nova__">➕ Nova categoria</option>
+  </select>
+
   <div style="margin-top:6px;display:flex;gap:6px">
     <button style="background:#2980b9;font-size:12px"
       onclick="editarMedicacao(${banco.indexOf(m)})">✏️ Editar</button>
@@ -477,6 +502,30 @@ i.onclick=(e)=>{
  });
  
 }
+async function trocarCategoria(index, novaCategoria){
+  const m = banco[index];
+  if(!m) return;
+
+  if(novaCategoria === "__nova__"){
+    const nome = prompt("Nome da nova categoria:");
+    if(!nome){
+      renderizarLista();
+      return;
+    }
+    novaCategoria = nome;
+  }
+
+  m.c = novaCategoria;
+
+  if(m.id){
+    await db.collection("medicacoes").doc(m.id).update({
+      categoria: novaCategoria
+    });
+  }
+
+  renderizarLista();
+}
+
 async function editarMedicacao(index){
   const m = banco[index];
   if(!m) return;
