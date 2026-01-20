@@ -413,6 +413,13 @@ const id = await salvarMedicacaoFirebase(nome, uso, categoria);
 
 renderizarLista();
 
+// 🔄 ATUALIZAR SELECT DE CATEGORIAS
+carregarCategorias();
+
+// 🔥 SE FOI NOVA CATEGORIA, SELECIONA ELA
+const select = document.getElementById("categoriaSelect");
+select.value = categoria;
+
 // 🔥 LIMPAR CAMPOS PARA PRÓXIMA MEDICAÇÃO
 document.getElementById("novaMedicacao").value = "";
 document.getElementById("novoUso").value = "";
@@ -749,6 +756,7 @@ function logout(){
 
 </body>
 </html>
+
 
 
 
