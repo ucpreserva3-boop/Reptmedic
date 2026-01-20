@@ -666,7 +666,16 @@ if(id){
  const blob=new Blob([bytes],{type:"application/pdf"});
  const aTag=document.createElement("a");
  aTag.href=URL.createObjectURL(blob);
- aTag.download="receita.pdf";
+// 🔥 NOME DO PACIENTE PARA O ARQUIVO
+const nomePaciente = document
+  .getElementById("nomePaciente")
+  .value
+  .trim() || "Paciente";
+
+// Remove caracteres inválidos para nome de arquivo
+const nomeSeguro = nomePaciente.replace(/[\\\/:*?"<>|]/g, "");
+
+aTag.download = `Receituário - ${nomeSeguro}.pdf`;
  aTag.click();
  URL.revokeObjectURL(aTag.href);
 }
