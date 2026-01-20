@@ -228,7 +228,14 @@ button{
     Salvar medicação
   </button>
 </div>
-  <div id="listaSidebar" class="sidebar-lista"></div>
+<div style="padding:6px;border-bottom:1px solid #ddd;font-size:13px">
+  <label style="display:flex;align-items:center;gap:6px">
+    <input type="checkbox" onchange="modoMoverCategoria=this.checked">
+    Habilitar mover medicações de categoria
+  </label>
+</div>
+
+<div id="listaSidebar" class="sidebar-lista"></div>
 </div>
 
 <script>
@@ -238,6 +245,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 const LIMITE = 8;
 let campoAtual = null;
+let modoMoverCategoria = false;
 
 /* Primeira letra maiúscula sem travar CAPS */
 function cap(t){
@@ -478,12 +486,20 @@ function renderizarLista(f=""){
 
   Object.keys(categorias).forEach(cat => {
     // Cabeçalho da categoria (aba)
-    const cabecalho = document.createElement("div");
-    cabecalho.className = "categoria-aba";
-    cabecalho.innerHTML = `
-      <span>${cat}</span>
-      <span>▸</span>
-    `;
+const cabecalho = document.createElement("div");
+cabecalho.className = "categoria-aba";
+cabecalho.innerHTML = `
+  <span>${cat}</span>
+
+  <div style="display:flex;gap:6px;align-items:center">
+    <button
+      style="font-size:11px;background:#3498db;padding:4px 8px"
+      onclick="event.stopPropagation(); editarCategoria('${cat}')">
+      Editar
+    </button>
+    <span>▸</span>
+  </div>
+`;
 
     // Container dos itens
     const itensBox = document.createElement("div");
@@ -499,8 +515,9 @@ i.innerHTML = `
   ${m.u}
 
   <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
-    <select style="font-size:12px"
-      onchange="mudarCategoria(${banco.indexOf(m)}, this.value)">
+<select style="font-size:12px"
+  ${modoMoverCategoria ? "" : "disabled"}
+  onchange="mudarCategoria(${banco.indexOf(m)}, this.value)">
       ${categoriasUnicas.map(c =>
         `<option value="${c}" ${c===m.c?"selected":""}>${c}</option>`
       ).join("")}
@@ -576,6 +593,30 @@ async function apagarMedicacao(index){
   }
 
   banco.splice(index, 1);
+  renderizarLista();
+}
+
+async function editarCategoria(nomeAtual){
+  const novoNome = prompt("Editar nome da categoria:", nomeAtual);
+  if(!novoNome || novoNome.trim() === nomeAtual) return;
+
+  // Atualiza banco local
+  banco.forEach(m => {
+    if(m.c === nomeAtual){
+      m.c = novoNome.trim();
+    }
+  });
+
+  // Atualiza Firebase
+  const snap = await db
+    .collection("medicacoes")
+    .where("categoria", "==", nomeAtual)
+    .get();
+
+  snap.forEach(doc=>{
+    doc.ref.update({ categoria: novoNome.trim() });
+  });
+
   renderizarLista();
 }
 
@@ -716,9 +757,6 @@ function logout(){
 
 </body>
 </html>
-
-
-
 
 
 
