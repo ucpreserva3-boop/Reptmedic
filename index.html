@@ -357,13 +357,11 @@ function carregarCategorias(){
     select.appendChild(o);
   });
 
-  // Opção de nova categoria
   const nova = document.createElement("option");
   nova.value = "__nova__";
   nova.textContent = "➕ Nova categoria";
   select.appendChild(nova);
 
-  // 🔥 SE NÃO EXISTIR NENHUMA CATEGORIA
   if(categorias.length === 0){
     select.value = "__nova__";
     inputNova.style.display = "block";
@@ -371,6 +369,22 @@ function carregarCategorias(){
     inputNova.style.display = "none";
   }
 }
+
+/* 🔥 COLE ESTA FUNÇÃO LOGO ABAIXO */
+function sincronizarSelectCategorias(){
+  const select = document.getElementById("categoriaSelect");
+  if(!select) return;
+
+  carregarCategorias();
+
+  const categoriasAtuais = [...new Set(banco.map(m => m.c))];
+
+  if(!categoriasAtuais.includes(select.value)){
+    select.value = "__nova__";
+    document.getElementById("novaCategoria").style.display = "block";
+  }
+}
+
 
 function verificarNovaCategoria(){
   const v = document.getElementById("categoriaSelect").value;
@@ -450,7 +464,8 @@ if(selectCat.value === "__nova__"){
     });
   }
 
-  renderizarLista();
+renderizarLista();
+sincronizarSelectCategorias();
 }
 
 function renderizarLista(f=""){
@@ -580,6 +595,7 @@ async function apagarMedicacao(index){
 
   banco.splice(index, 1);
   renderizarLista();
+  sincronizarSelectCategorias();
 }
 
 async function editarCategoria(nomeAtual){
@@ -604,6 +620,7 @@ async function editarCategoria(nomeAtual){
   });
 
   renderizarLista();
+  sincronizarSelectCategorias();
 }
 
 /* GERAR PDF */
@@ -756,6 +773,7 @@ function logout(){
 
 </body>
 </html>
+
 
 
 
