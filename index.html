@@ -250,18 +250,47 @@ function medicacaoExiste(nome, uso){
     m.u.toLowerCase().trim() === uso.toLowerCase().trim()
   );
 }
+function medicacaoExiste(nome, uso){
+  return banco.some(m =>
+    m.n.toLowerCase().trim() === nome.toLowerCase().trim() &&
+    m.u.toLowerCase().trim() === uso.toLowerCase().trim()
+  );
+}
+
+/* 🔥 PASSO 4 — CARREGAR MEDICAÇÕES DO FIREBASE */
+async function carregarMedicacoesFirebase(){
+  const snapshot = await db
+    .collection("medicacoes")
+    .orderBy("criadoEm")
+    .get();
+
+  snapshot.forEach(doc=>{
+    const d = doc.data();
+
+    if(!medicacaoExiste(d.nome, d.uso)){
+      banco.push({
+        id: doc.id,
+        c: d.categoria || "⭐ Medicações recém adicionadas",
+        n: d.nome,
+        u: d.uso
+      });
+    }
+  });
+}
 
 async function salvarMedicacaoFirebase(nome, uso){
   const user = auth.currentUser;
-  if(!user) return;
+  if(!user) return null;
 
-  await db.collection("medicacoes").add({
+  const docRef = await db.collection("medicacoes").add({
     nome: nome,
     uso: uso,
     categoria: "⭐ Medicações recém adicionadas",
     criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
     criadoPor: user.email
   });
+
+  return docRef.id; // 🔥 ESSENCIAL
 }
 
 /* MEDICAÇÕES */
@@ -380,16 +409,18 @@ async function gerarPDF(){
    const uso  = b.querySelector(".med2").value.trim();
 
    if(nome && uso && !medicacaoExiste(nome, uso)){
-     await salvarMedicacaoFirebase(nome, uso);
+     const id = await salvarMedicacaoFirebase(nome, uso);
 
-     // adiciona no banco local (sidebar atual)
-     banco.push({
-       c: "⭐ Medicações recém adicionadas",
-       n: nome,
-       u: uso
-     });
-   }
- }
+if(id){
+  banco.push({
+    id: id, 
+    c: "⭐ Medicações recém adicionadas",
+    n: nome,
+    u: uso
+      });
+    }
+  }
+}
 
  const pdf=await PDFLib.PDFDocument.load(await file.arrayBuffer());
  const font=await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
@@ -469,6 +500,8 @@ auth.onAuthStateChanged(user=>{
   if(user){
     login.style.display = "none";
     app.style.display = "block";
+
+    carregarMedicacoesFirebase(); // 🔥 AQUI
   }else{
     login.style.display = "block";
     app.style.display = "none";
