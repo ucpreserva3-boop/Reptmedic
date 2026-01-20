@@ -272,12 +272,6 @@ function medicacaoExiste(nome, uso){
     m.u.toLowerCase().trim() === uso.toLowerCase().trim()
   );
 }
-function medicacaoExiste(nome, uso){
-  return banco.some(m =>
-    m.n.toLowerCase().trim() === nome.toLowerCase().trim() &&
-    m.u.toLowerCase().trim() === uso.toLowerCase().trim()
-  );
-}
 
 /* 🔥 PASSO 4 — CARREGAR MEDICAÇÕES DO FIREBASE */
 async function carregarMedicacoesFirebase(){
@@ -419,27 +413,6 @@ async function salvarMedicacaoManual(){
     renderizarLista();
     document.getElementById("formManual").style.display = "none";
   }
-}
-
-function carregarCategorias(){
-  const select = document.getElementById("categoriaSelect");
-  select.innerHTML = "";
-
-  const categorias = [...new Set(banco.map(m => m.c))];
-
-  categorias.forEach(c=>{
-    const o = document.createElement("option");
-    o.value = c;
-    o.textContent = c;
-    select.appendChild(o);
-  });
-
-  const nova = document.createElement("option");
-  nova.value = "__nova__";
-  nova.textContent = "➕ Nova categoria";
-  select.appendChild(nova);
-
-  document.getElementById("novaCategoria").style.display = "none";
 }
 
 function renderizarLista(f=""){
@@ -632,3 +605,4 @@ function logout(){
 
 </body>
 </html>
+
