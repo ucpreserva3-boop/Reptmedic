@@ -505,10 +505,12 @@ cabecalho.innerHTML = `
     const itensBox = document.createElement("div");
     itensBox.className = "categoria-itens";
 
-    categorias[cat].forEach(m => {
-      const i = document.createElement("div");
-	  i.className = "item";
-const categoriasUnicas = [...new Set(banco.map(x => x.c))];
+categorias[cat].forEach(m => {
+  const index = banco.indexOf(m);
+
+  const i = document.createElement("div");
+  i.className = "item";
+  const categoriasUnicas = [...new Set(banco.map(x => x.c))];
 
 i.innerHTML = `
   <strong>${m.n}</strong><br>
@@ -517,17 +519,18 @@ i.innerHTML = `
   <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
 <select style="font-size:12px"
   ${modoMoverCategoria ? "" : "disabled"}
-  onchange="mudarCategoria(${banco.indexOf(m)}, this.value)">
+  onchange="mudarCategoria(${index}, this.value)">
       ${categoriasUnicas.map(c =>
         `<option value="${c}" ${c===m.c?"selected":""}>${c}</option>`
       ).join("")}
     </select>
 
-    <button style="background:#2980b9;font-size:12px"
-      onclick="editarMedicacao(${banco.indexOf(m)})">✏️ Editar</button>
+<button style="background:#2980b9;font-size:12px"
+  onclick="editarMedicacao(${index})">✏️ Editar</button>
 
-    <button style="background:#e74c3c;font-size:12px"
-      onclick="apagarMedicacao(${banco.indexOf(m)})">🗑️ Apagar</button>
+<button style="background:#e74c3c;font-size:12px"
+  onclick="apagarMedicacao(${index})">🗑️ Apagar</button>
+
   </div>
 `;
 
@@ -753,10 +756,18 @@ auth.onAuthStateChanged(user=>{
 function logout(){
   auth.signOut();
 }
+.categoria-aba button{
+  display:none;
+}
+
+.categoria-aba:hover button{
+  display:inline-block;
+}
 </script>
 
 </body>
 </html>
+
 
 
 
