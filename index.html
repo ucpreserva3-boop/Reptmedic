@@ -344,6 +344,8 @@ function abrirFormularioManual(){
 
 function carregarCategorias(){
   const select = document.getElementById("categoriaSelect");
+  const inputNova = document.getElementById("novaCategoria");
+
   select.innerHTML = "";
 
   const categorias = [...new Set(banco.map(m => m.c))];
@@ -355,12 +357,19 @@ function carregarCategorias(){
     select.appendChild(o);
   });
 
+  // Opção de nova categoria
   const nova = document.createElement("option");
   nova.value = "__nova__";
   nova.textContent = "➕ Nova categoria";
   select.appendChild(nova);
 
-  document.getElementById("novaCategoria").style.display = "none";
+  // 🔥 SE NÃO EXISTIR NENHUMA CATEGORIA
+  if(categorias.length === 0){
+    select.value = "__nova__";
+    inputNova.style.display = "block";
+  }else{
+    inputNova.style.display = "none";
+  }
 }
 
 function verificarNovaCategoria(){
