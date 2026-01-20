@@ -122,7 +122,17 @@ button{
 .categoria-itens.aberta{
   display:block;
 }
+
+/* Mostrar botão Editar apenas no hover da categoria */
+.categoria-aba button{
+  display:none;
+}
+
+.categoria-aba:hover button{
+  display:inline-block;
+}
 </style>
+
 </head>
 
 <body>
@@ -517,7 +527,7 @@ i.innerHTML = `
   ${m.u}
 
   <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
-<select style="font-size:12px"
+<select style="font-size:12px;opacity:${modoMoverCategoria ? "1" : "0.5"}"
   ${modoMoverCategoria ? "" : "disabled"}
   onchange="mudarCategoria(${index}, this.value)">
       ${categoriasUnicas.map(c =>
@@ -755,13 +765,6 @@ auth.onAuthStateChanged(user=>{
 /* LOGOUT (opcional) */
 function logout(){
   auth.signOut();
-}
-.categoria-aba button{
-  display:none;
-}
-
-.categoria-aba:hover button{
-  display:inline-block;
 }
 </script>
 
