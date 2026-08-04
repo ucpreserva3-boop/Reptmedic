@@ -1,263 +1,714 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<!-- FIREBASE -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Preenchimento de Receita</title>
 
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 <!-- PDF-LIB -->
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
-body{margin:0;font-family:Arial,sans-serif;background:#f4f4f4}
-.container{max-width:750px;margin:auto;padding:16px}
-h1{text-align:center;margin-bottom:20px}
-.campo{margin-bottom:16px}
-label{font-weight:bold;display:block;margin-bottom:6px}
+:root{
+  --bg:#eef2f6;
+  --surface:#ffffff;
+  --surface-2:#f7f9fb;
+  --border:#dde5ec;
+  --text:#132030;
+  --muted:#6b7d90;
+  --brand:#0e7c6b;
+  --brand-strong:#0a6153;
+  --brand-soft:#e6f4f1;
+  --info:#1f6feb;
+  --danger:#d64545;
+  --warn:#d98424;
+  --radius:14px;
+  --shadow-sm:0 1px 2px rgba(19,32,48,.06), 0 1px 3px rgba(19,32,48,.06);
+  --shadow-md:0 8px 24px -12px rgba(19,32,48,.25);
+  --shadow-lg:0 24px 60px -24px rgba(19,32,48,.35);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  background:
+    radial-gradient(1100px 520px at 12% -10%, #dff0ec 0%, transparent 60%),
+    radial-gradient(900px 480px at 100% 0%, #e3ecf7 0%, transparent 55%),
+    var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ====== TIPOGRAFIA / BASE ====== */
+h1,h2,h3{margin:0;letter-spacing:-.02em}
+.container{max-width:820px;margin:0 auto;padding:20px 16px 120px}
+
+label,.label{
+  display:block;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:8px;
+}
 
 input,select,textarea{
   width:100%;
-  padding:12px;
+  padding:12px 14px;
   font-size:16px;
-  box-sizing:border-box
+  font-family:inherit;
+  color:var(--text);
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  outline:none;
+  transition:border-color .15s, box-shadow .15s, background .15s;
 }
+input::placeholder,textarea::placeholder{color:#9fb0c0}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--brand);
+  box-shadow:0 0 0 4px rgba(14,124,107,.14);
+}
+textarea{min-height:74px;resize:vertical;line-height:1.45}
+select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7d90' stroke-width='2.5' stroke-linecap='round'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
 
 button{
-  padding:12px;
-  font-size:16px;
+  font-family:inherit;
+  font-size:15px;
+  font-weight:600;
+  padding:12px 16px;
   border:none;
-  border-radius:6px;
+  border-radius:10px;
   cursor:pointer;
-  background:#27ae60;
+  background:var(--brand);
   color:#fff;
+  transition:filter .15s, transform .06s, box-shadow .15s, background .15s;
+}
+button:hover{filter:brightness(1.07)}
+button:active{transform:translateY(1px)}
+button:disabled{opacity:.55;cursor:not-allowed;filter:none}
+.btn-ghost{background:var(--surface);color:var(--text);border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+.btn-ghost:hover{background:var(--surface-2);filter:none}
+.btn-danger{background:var(--danger)}
+.btn-info{background:var(--info)}
+.btn-warn{background:var(--warn)}
+.btn-sm{padding:8px 12px;font-size:13px;border-radius:9px}
+.btn-xs{padding:6px 10px;font-size:12px;border-radius:8px}
+.btn-block{width:100%}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-sm);
+  padding:18px;
+  margin-bottom:16px;
+}
+.campo{margin-bottom:16px}
+.campo:last-child{margin-bottom:0}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+
+/* ====== LOGIN ====== */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.login-card{
+  width:100%;max-width:400px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:18px;
+  box-shadow:var(--shadow-lg);
+  padding:28px;
+}
+.login-logo{
+  width:54px;height:54px;border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--brand-soft);color:var(--brand-strong);
+  font-size:26px;margin:0 auto 14px;
+}
+.login-card h2{text-align:center;font-size:22px}
+.login-card .sub{text-align:center;color:var(--muted);font-size:14px;margin:6px 0 22px}
+.senha-wrap{position:relative}
+.senha-wrap input{padding-right:74px}
+.senha-toggle{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  background:transparent;color:var(--muted);font-size:12px;padding:6px 10px;font-weight:600;
+}
+.senha-toggle:hover{color:var(--brand-strong);filter:none}
+.login-erro{
+  display:none;margin-bottom:14px;padding:10px 12px;border-radius:10px;
+  background:#fdecec;color:#9b2c2c;font-size:13px;border:1px solid #f6cfcf;
 }
 
-.medicacao-box{background:#fff;border:1px solid #ccc;padding:10px;margin-bottom:10px}
-.medicacao-linha{display:flex;gap:6px;align-items:center}
-.num{width:32px;font-weight:bold;text-align:center}
-.btn-apagar{background:#e74c3c}
-.btn-lupa{background:#34495e}
-.btn-add{background:#2980b9;margin-top:8px}
+/* ====== HEADER ====== */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  background:rgba(255,255,255,.82);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.topbar-in{
+  max-width:820px;margin:0 auto;padding:12px 16px;
+  display:flex;align-items:center;gap:12px;
+}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-mark{
+  width:38px;height:38px;border-radius:11px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--brand-soft);color:var(--brand-strong);font-size:19px;
+}
+.brand-txt{min-width:0}
+.brand-txt strong{display:block;font-size:15px;line-height:1.2}
+.brand-txt span{display:block;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .btn-sm{margin-left:auto}
 
-/* DATA */
-.data-box{display:flex;gap:10px}
-.data-box input{text-align:center}
-
-/* SIDEBAR */
-.sidebar{
-  position:fixed;
-  inset:0;
-  background:#fff;
-  z-index:999;
-  display:none;
-  flex-direction:column;
+/* ====== SEÇÕES ====== */
+.sec-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.sec-head h3{font-size:16px}
+.sec-num{
+  width:26px;height:26px;border-radius:8px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--brand-soft);color:var(--brand-strong);font-size:12px;font-weight:700;
+}
+.badge{
+  margin-left:auto;font-size:12px;font-weight:700;color:var(--muted);
+  background:var(--surface-2);border:1px solid var(--border);
+  padding:4px 10px;border-radius:999px;
 }
 
-.sidebar-topo{
-  background:#e74c3c;
-  padding:6px 10px;
-}
-.sidebar-topo button{
-  background:#c0392b;
-  padding:6px 10px;
-  font-size:14px;
-}
-
-.sidebar-busca{
-  padding:8px;
-}
-.sidebar-busca input{
-  padding:6px 8px;
-  font-size:13px;
-  height:32px;
-}
-
-.sidebar-lista{
-  flex:1;
-  overflow-y:auto;
-  padding:6px 8px;
-}
-
-.categoria{
-  font-weight:bold;
-  margin:10px 0 4px;
-  font-size:14px;
-}
-
-.item{
-  padding:6px 4px;
-  border-bottom:1px dashed #ccc;
-  font-size:14px;
-  line-height:1.3;
+/* ====== PDF BASE ====== */
+.drop{
+  border:1.5px dashed var(--border);
+  border-radius:12px;
+  padding:18px;
+  text-align:center;
+  background:var(--surface-2);
   cursor:pointer;
+  transition:border-color .15s, background .15s;
 }
-.item:hover{background:#f0f0f0}
-/* ===== CATEGORIAS EM ABAS (ACCORDION) ===== */
+.drop:hover,.drop.drag{border-color:var(--brand);background:var(--brand-soft)}
+.drop .big{font-size:26px;display:block;margin-bottom:6px}
+.drop .t{font-weight:600;font-size:14px}
+.drop .s{font-size:12px;color:var(--muted);margin-top:4px}
+.arquivo-ok{
+  display:none;align-items:center;gap:10px;
+  padding:12px 14px;border-radius:12px;
+  background:var(--brand-soft);border:1px solid #c8e6df;
+}
+.arquivo-ok .nome{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arquivo-ok .meta{font-size:12px;color:var(--brand-strong)}
+
+/* ====== SEGMENTED (USO) ====== */
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg button{
+  flex:1;min-width:130px;
+  background:var(--surface);color:var(--muted);
+  border:1px solid var(--border);
+}
+.seg button:hover{background:var(--surface-2);filter:none}
+.seg button.ativo{
+  background:var(--brand-soft);border-color:var(--brand);
+  color:var(--brand-strong);box-shadow:inset 0 0 0 1px var(--brand);
+}
+
+/* ====== MEDICAÇÕES ====== */
+.medicacao-box{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
+  margin-bottom:10px;
+  box-shadow:var(--shadow-sm);
+}
+.medicacao-topo{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.num{
+  width:26px;height:26px;border-radius:8px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--brand);color:#fff;font-size:12px;font-weight:700;
+}
+.medicacao-acoes{margin-left:auto;display:flex;gap:6px}
+.icon-btn{
+  width:34px;height:34px;padding:0;display:flex;align-items:center;justify-content:center;
+  font-size:14px;border-radius:9px;
+}
+.med1{margin-bottom:8px;font-weight:600}
+.vazio{
+  text-align:center;padding:26px 14px;border:1.5px dashed var(--border);
+  border-radius:12px;color:var(--muted);font-size:14px;background:var(--surface-2);
+}
+
+/* ====== DATA ====== */
+.data-box{display:flex;gap:10px;align-items:center}
+.data-box input{text-align:center;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+
+/* ====== BARRA DE AÇÕES ====== */
+.actionbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:45;
+  background:rgba(255,255,255,.9);
+  backdrop-filter:blur(12px);
+  border-top:1px solid var(--border);
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+}
+.actionbar-in{max-width:820px;margin:0 auto;display:flex;gap:10px}
+
+/* ====== PRÉVIA / MODAL ====== */
+.modal{
+  position:fixed;inset:0;z-index:1200;
+  background:rgba(11,20,30,.55);
+  backdrop-filter:blur(3px);
+  display:none;
+  align-items:stretch;justify-content:center;
+  padding:0;
+}
+.modal.aberto{display:flex}
+.modal-card{
+  background:var(--bg);
+  width:100%;max-width:1000px;
+  display:flex;flex-direction:column;
+  box-shadow:var(--shadow-lg);
+}
+.modal-topo{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:12px 14px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+}
+.modal-topo .tit{min-width:0}
+.modal-topo .tit strong{display:block;font-size:15px}
+.modal-topo .tit span{display:block;font-size:12px;color:var(--muted)}
+.modal-acoes{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.previa-area{
+  flex:1;min-height:0;
+  background:#5b6673;
+  display:flex;align-items:stretch;justify-content:center;
+  padding:10px;
+}
+.previa-area iframe{
+  width:100%;height:100%;border:none;border-radius:8px;background:#fff;
+  box-shadow:var(--shadow-md);
+}
+.previa-carregando{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;color:#fff;font-size:14px;width:100%;
+}
+.modal-rodape{
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  display:flex;gap:10px;
+}
+.modal-rodape button{flex:1}
+@media(min-width:761px){ .modal-rodape{display:none} }
+@media(max-width:760px){ .modal-acoes{display:none} }
+.actionbar .principal{flex:1;font-size:16px}
+
+/* ====== SIDEBAR ====== */
+.sidebar{
+  position:fixed;inset:0;z-index:999;
+  background:var(--bg);
+  display:none;flex-direction:column;
+}
+.sidebar-topo{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+}
+.sidebar-topo h3{font-size:15px}
+.sidebar-topo .btn-sm{margin-left:auto}
+.sidebar-busca{padding:12px 14px;background:var(--surface);border-bottom:1px solid var(--border)}
+.sidebar-acoes{padding:12px 14px;background:var(--surface);border-bottom:1px solid var(--border)}
+.sidebar-lista{flex:1;overflow-y:auto;padding:12px 14px 40px;-webkit-overflow-scrolling:touch}
+
+#formManual{display:none;padding:14px;background:var(--surface-2);border-bottom:1px solid var(--border)}
+#formManual > *{margin-bottom:8px}
+#formManual > *:last-child{margin-bottom:0}
+
 .categoria-aba{
-  background:#eee;
-  padding:8px;
-  margin-top:8px;
-  border-radius:6px;
-  font-weight:bold;
+  background:var(--surface);
+  border:1px solid var(--border);
+  padding:12px 14px;
+  margin-top:10px;
+  border-radius:12px;
+  font-weight:600;
   font-size:14px;
   cursor:pointer;
   display:flex;
   justify-content:space-between;
   align-items:center;
+  gap:10px;
+  box-shadow:var(--shadow-sm);
 }
-
-.categoria-aba:hover{
-  background:#e0e0e0;
+.categoria-aba:hover{background:var(--surface-2)}
+.categoria-aba .cat-nome{display:flex;align-items:center;gap:8px;min-width:0}
+.cat-count{
+  font-size:11px;font-weight:700;color:var(--muted);
+  background:var(--surface-2);border:1px solid var(--border);
+  padding:2px 8px;border-radius:999px;flex:none;
 }
+.seta{color:var(--muted);font-size:12px}
 
-.categoria-itens{
-  display:none;
-  padding-left:6px;
+.categoria-itens{display:none;padding:6px 2px 0}
+.categoria-itens.aberta{display:block}
+
+.item{
+  padding:12px 14px;
+  margin-top:8px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  font-size:14px;
+  line-height:1.45;
+  cursor:pointer;
+  transition:border-color .15s, box-shadow .15s;
 }
+.item:hover{border-color:var(--brand);box-shadow:var(--shadow-md)}
+.item .item-nome{font-weight:700;display:block;margin-bottom:2px}
+.item .item-uso{color:var(--muted);white-space:pre-wrap}
+.item-acoes{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.item-acoes select{width:auto;max-width:190px;font-size:12px;padding:6px 28px 6px 10px}
+.sem-resultado{text-align:center;color:var(--muted);font-size:14px;padding:36px 12px}
 
-.categoria-itens.aberta{
-  display:block;
+/* ====== TOAST ====== */
+#toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:88px;z-index:2000;display:flex;flex-direction:column;gap:8px;width:calc(100% - 32px);max-width:420px;pointer-events:none}
+.toast{
+  pointer-events:auto;
+  background:#132030;color:#fff;
+  padding:12px 14px;border-radius:12px;
+  font-size:14px;box-shadow:var(--shadow-lg);
+  animation:toastIn .18s ease-out;
 }
+.toast.ok{background:var(--brand-strong)}
+.toast.erro{background:#9b2c2c}
+.toast.aviso{background:#8a5410}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
-/* Mostrar botão Editar apenas no hover da categoria */
-.categoria-aba button{
-  display:none;
-}
+.spin{display:inline-block;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-.categoria-aba:hover button{
-  display:inline-block;
+@media(max-width:560px){
+  .container{padding:16px 12px 120px}
+  .card{padding:14px}
+  .seg button{min-width:0}
 }
 </style>
-
 </head>
 
 <body>
-<!-- LOGIN -->
-<div id="loginBox" style="max-width:400px;margin:60px auto;padding:20px;background:#fff;border-radius:8px">
-  <h2 style="text-align:center">Login</h2>
 
-  <div class="campo">
-    <label>Email</label>
-    <input type="email" id="loginEmail">
+<!-- ============ LOGIN ============ -->
+<div id="loginBox" class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">⚕️</div>
+    <h2>Receituário Médico</h2>
+    <p class="sub">Entre para preencher e gerar suas receitas</p>
+
+    <div id="loginErro" class="login-erro"></div>
+
+    <div class="campo">
+      <label for="loginEmail">Email</label>
+      <input type="email" id="loginEmail" autocomplete="email" placeholder="voce@clinica.com">
+    </div>
+
+    <div class="campo">
+      <label for="loginSenha">Senha</label>
+      <div class="senha-wrap">
+        <input type="password" id="loginSenha" autocomplete="current-password" placeholder="••••••••">
+        <button type="button" class="senha-toggle" onclick="alternarSenha()" id="btnSenha">Mostrar</button>
+      </div>
+    </div>
+
+    <button class="btn-block" id="btnEntrar" onclick="login()">Entrar</button>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" style="display:none">
+
+  <header class="topbar">
+    <div class="topbar-in">
+      <div class="brand">
+        <div class="brand-mark">⚕️</div>
+        <div class="brand-txt">
+          <strong>Receita Médica</strong>
+          <span id="usuarioEmail">—</span>
+        </div>
+      </div>
+      <button class="btn-ghost btn-sm" onclick="logout()">Sair</button>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- PDF BASE -->
+    <section class="card">
+      <div class="sec-head">
+        <div class="sec-num">1</div>
+        <h3>Modelo de receituário</h3>
+        <span class="badge" id="badgePdf">Nenhum PDF</span>
+      </div>
+
+      <input type="file" id="pdfBase" accept="application/pdf" style="display:none" onchange="selecionarPdf(this.files[0])">
+
+      <div class="drop" id="dropPdf" onclick="document.getElementById('pdfBase').click()">
+        <span class="big">📄</span>
+        <div class="t">Selecionar PDF base</div>
+        <div class="s">Toque para escolher ou arraste o arquivo aqui</div>
+      </div>
+
+      <div class="arquivo-ok" id="arquivoOk">
+        <span style="font-size:20px">✅</span>
+        <div style="min-width:0;flex:1">
+          <div class="nome" id="arquivoNome">—</div>
+          <div class="meta" id="arquivoMeta">Modelo salvo neste dispositivo</div>
+        </div>
+        <button class="btn-ghost btn-xs" onclick="event.stopPropagation();document.getElementById('pdfBase').click()">Trocar</button>
+      </div>
+    </section>
+
+    <!-- PACIENTE -->
+    <section class="card">
+      <div class="sec-head">
+        <div class="sec-num">2</div>
+        <h3>Paciente</h3>
+      </div>
+
+      <div class="campo">
+        <label for="nomePaciente">Nome do paciente</label>
+        <input id="nomePaciente" placeholder="NOME COMPLETO"
+               oninput="this.value=this.value.toUpperCase();salvarRascunho()">
+      </div>
+
+      <div class="campo">
+        <label>Uso</label>
+        <div class="seg" id="segUso">
+          <button type="button" data-uso="USO ORAL" onclick="definirUso('USO ORAL')">💊 Uso oral</button>
+          <button type="button" data-uso="USO TÓPICO" onclick="definirUso('USO TÓPICO')">🧴 Uso tópico</button>
+        </div>
+        <select id="uso" style="display:none">
+          <option value=""></option>
+          <option>USO ORAL</option>
+          <option>USO TÓPICO</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- MEDICAÇÕES -->
+    <section class="card">
+      <div class="sec-head">
+        <div class="sec-num">3</div>
+        <h3>Medicações</h3>
+        <span class="badge" id="badgeMed">0 / 8</span>
+      </div>
+
+      <div id="listaMedicacoes"></div>
+      <div class="vazio" id="medVazio">Nenhuma medicação adicionada ainda.</div>
+
+      <button type="button" class="btn-info btn-block" style="margin-top:12px" onclick="adicionarMedicacao()">
+        ➕ Adicionar medicação
+      </button>
+    </section>
+
+    <!-- DATA -->
+    <section class="card">
+      <div class="sec-head">
+        <div class="sec-num">4</div>
+        <h3>Data</h3>
+      </div>
+
+      <div class="data-box">
+        <input id="dataDia" placeholder="DD" maxlength="2" inputmode="numeric">
+        <input id="dataMes" placeholder="MM" maxlength="2" inputmode="numeric">
+        <input id="dataAno" placeholder="AAAA" maxlength="4" inputmode="numeric">
+        <button type="button" class="btn-ghost btn-sm" style="flex:none" onclick="preencherHoje()">Hoje</button>
+      </div>
+      <p class="hint">A data de hoje é preenchida automaticamente ao abrir.</p>
+    </section>
+
   </div>
 
-  <div class="campo">
-    <label>Senha</label>
-    <input type="password" id="loginSenha">
+  <div class="actionbar">
+    <div class="actionbar-in">
+      <button type="button" class="principal" id="btnPdf" onclick="abrirPrevia()">👁️ Conferir receita</button>
+      <button type="button" class="btn-ghost" onclick="limparDados()">🧹 Limpar</button>
+    </div>
   </div>
-
-  <button onclick="login()">Entrar</button>
 </div>
 
-<div class="container" id="app" style="display:none">
-<h1>Receita Médica</h1>
-
-<div class="campo">
-<label>Selecionar PDF base</label>
-<input type="file" id="pdfBase" accept="application/pdf">
-</div>
-
-<div class="campo">
-<label>NOME DO PACIENTE</label>
-<input id="nomePaciente" oninput="this.value=this.value.toUpperCase()">
-</div>
-
-<div class="campo">
-<label>USO</label>
-<select id="uso">
-<option value="">Selecione</option>
-<option>USO ORAL</option>
-<option>USO TÓPICO</option>
-</select>
-</div>
-
-<div class="campo">
-<label>MEDICAÇÕES</label>
-<div id="listaMedicacoes"></div>
-<button type="button" class="btn-add" onclick="adicionarMedicacao()">➕ Adicionar Medicação</button>
-</div>
-
-<div class="campo">
-<label>DATA</label>
-<div class="data-box">
-<input id="dataDia" placeholder="DD" maxlength="2">
-<input id="dataMes" placeholder="MM" maxlength="2">
-<input id="dataAno" placeholder="AAAA" maxlength="4">
-</div>
-</div>
-
-<button type="button" onclick="gerarPDF()">📄 Gerar PDF</button>
-
-<button type="button"
-        style="background:#e67e22;margin-top:10px"
-        onclick="limparDados()">
-🧹 Limpar dados
-</button>
-
-</div>
-
-<!-- SIDEBAR -->
+<!-- ============ SIDEBAR ============ -->
 <div id="sidebar" class="sidebar">
   <div class="sidebar-topo">
-    <button type="button" onclick="fecharSidebar()">Fechar</button>
+    <h3>Banco de medicações</h3>
+    <button type="button" class="btn-ghost btn-sm" onclick="fecharSidebar()">✕ Fechar</button>
   </div>
+
   <div class="sidebar-busca">
-    <input placeholder="Buscar..." oninput="renderizarLista(this.value)">
+    <input id="buscaSidebar" placeholder="🔍 Buscar medicação ou uso..." oninput="renderizarLista(this.value)">
   </div>
-  <div style="padding:8px;border-bottom:1px solid #ddd">
-  <button type="button"
-    style="background:#2980b9;width:100%;font-size:14px"
-    onclick="abrirFormularioManual()">
-    ➕ Adicionar medicação manualmente
-  </button>
+
+  <div class="sidebar-acoes">
+    <button type="button" class="btn-info btn-block btn-sm" onclick="abrirFormularioManual()">
+      ➕ Adicionar medicação manualmente
+    </button>
+  </div>
+
+  <div id="formManual">
+    <label>Categoria</label>
+    <select id="categoriaSelect" onchange="verificarNovaCategoria()"></select>
+    <input id="novaCategoria" placeholder="Nome da nova categoria" style="display:none">
+    <input id="novaMedicacao" placeholder="Nome da medicação" oninput="this.value = cap(this.value)">
+    <textarea id="novoUso" placeholder="Modo de uso" oninput="this.value = cap(this.value)"></textarea>
+    <button class="btn-block" onclick="salvarMedicacaoManual()">Salvar medicação</button>
+  </div>
+
+  <div id="listaSidebar" class="sidebar-lista"></div>
 </div>
 
-<div id="formManual" style="display:none;padding:8px;border-bottom:1px solid #ddd">
-  <select id="categoriaSelect" onchange="verificarNovaCategoria()"
-    style="margin-bottom:6px">
-  </select>
+<!-- ============ PRÉVIA DO PDF ============ -->
+<div id="modalPrevia" class="modal">
+  <div class="modal-card">
+    <div class="modal-topo">
+      <div class="tit">
+        <strong>Prévia da receita</strong>
+        <span id="previaInfo">Confira os dados antes de imprimir</span>
+      </div>
+      <div class="modal-acoes">
+        <button type="button" class="btn-ghost btn-sm" onclick="fecharPrevia()">✏️ Editar</button>
+        <button type="button" class="btn-ghost btn-sm" onclick="baixarPrevia()">⬇️ Baixar PDF</button>
+        <button type="button" class="btn-sm" onclick="imprimirPrevia()">🖨️ Imprimir</button>
+      </div>
+    </div>
 
-  <input id="novaCategoria" placeholder="Nova categoria"
-    style="display:none;margin-bottom:6px">
+    <div class="previa-area">
+      <div class="previa-carregando" id="previaCarregando">
+        <span class="spin" style="font-size:26px">⏳</span>
+        Montando a prévia...
+      </div>
+      <iframe id="previaFrame" title="Prévia da receita" style="display:none"></iframe>
+    </div>
 
-<input id="novaMedicacao"
-       placeholder="Nome da medicação"
-       style="margin-bottom:6px"
-       oninput="this.value = cap(this.value)">
-
-<textarea id="novoUso"
-          placeholder="Modo de uso"
-          oninput="this.value = cap(this.value)"></textarea>
-
-  <button style="margin-top:6px;width:100%"
-    onclick="salvarMedicacaoManual()">
-    Salvar medicação
-  </button>
+    <div class="modal-rodape">
+      <button type="button" class="btn-ghost" onclick="fecharPrevia()">✏️ Editar</button>
+      <button type="button" class="btn-ghost" onclick="baixarPrevia()">⬇️ Baixar</button>
+      <button type="button" onclick="imprimirPrevia()">🖨️ Imprimir</button>
+    </div>
+  </div>
 </div>
 
-<div id="listaSidebar" class="sidebar-lista"></div>
-</div>
+<div id="toasts"></div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("app").style.display = "none";
-  document.getElementById("loginBox").style.display = "block";
-});
+/* ================== CONFIG ================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyAhWOQRO47_RiBjj2RG4BXf7lhYy6KNiDg",
+  authDomain: "receituario-3c175.firebaseapp.com",
+  projectId: "receituario-3c175",
+  storageBucket: "receituario-3c175.firebasestorage.app",
+  messagingSenderId: "809180223495",
+  appId: "1:809180223495:web:b6004647b7a0c6965f32a2"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
 const LIMITE = 8;
+const CAT_PADRAO = "⭐ Medicações recém adicionadas";
 let campoAtual = null;
+let pdfBaseBytes = null;   // Uint8Array do PDF base
+let pdfBaseNome = "";
+let previaBlob = null;
+let previaUrl = null;
+let previaNomeArquivo = "";
+
+/* ================== TOAST ================== */
+function toast(msg, tipo){
+  const el = document.createElement("div");
+  el.className = "toast " + (tipo || "");
+  el.textContent = msg;
+  document.getElementById("toasts").appendChild(el);
+  setTimeout(()=>{ el.style.opacity = "0"; el.style.transition = "opacity .25s"; }, 2600);
+  setTimeout(()=> el.remove(), 2900);
+}
 
 /* Primeira letra maiúscula sem travar CAPS */
 function cap(t){
- if(!t) return "";
- return t[0].toUpperCase() + t.slice(1);
+  if(!t) return "";
+  return t[0].toUpperCase() + t.slice(1);
 }
 
-/* BANCO DE MEDICAÇÕES */
-const banco=[];
+/* ================== LOGIN ================== */
+function alternarSenha(){
+  const i = document.getElementById("loginSenha");
+  const b = document.getElementById("btnSenha");
+  const ver = i.type === "password";
+  i.type = ver ? "text" : "password";
+  b.textContent = ver ? "Ocultar" : "Mostrar";
+}
+
+function erroLoginMsg(code){
+  const mapa = {
+    "auth/invalid-email": "Email inválido.",
+    "auth/user-not-found": "Usuário não encontrado.",
+    "auth/wrong-password": "Senha incorreta.",
+    "auth/invalid-credential": "Email ou senha incorretos.",
+    "auth/too-many-requests": "Muitas tentativas. Tente novamente em instantes.",
+    "auth/network-request-failed": "Sem conexão com a internet."
+  };
+  return mapa[code] || "Não foi possível entrar. Tente novamente.";
+}
+
+function login(){
+  const email = document.getElementById("loginEmail").value.trim();
+  const senha = document.getElementById("loginSenha").value;
+  const erro  = document.getElementById("loginErro");
+  const btn   = document.getElementById("btnEntrar");
+
+  erro.style.display = "none";
+
+  if(!email || !senha){
+    erro.textContent = "Preencha email e senha.";
+    erro.style.display = "block";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">⏳</span> Entrando...';
+
+  auth.signInWithEmailAndPassword(email, senha)
+    .catch(err => {
+      erro.textContent = erroLoginMsg(err.code);
+      erro.style.display = "block";
+    })
+    .finally(()=>{
+      btn.disabled = false;
+      btn.textContent = "Entrar";
+    });
+}
+
+["loginEmail","loginSenha"].forEach(id=>{
+  document.getElementById(id).addEventListener("keydown", e=>{
+    if(e.key === "Enter") login();
+  });
+});
+
+function logout(){
+  if(!confirm("Deseja sair da sua conta?")) return;
+  auth.signOut();
+}
+
+/* ================== BANCO ================== */
+const banco = [];
 function medicacaoExiste(nome, uso){
   return banco.some(m =>
     m.n.toLowerCase().trim() === nome.toLowerCase().trim() &&
@@ -265,95 +716,241 @@ function medicacaoExiste(nome, uso){
   );
 }
 
-/* 🔥 PASSO 4 — CARREGAR MEDICAÇÕES DO FIREBASE */
 async function carregarMedicacoesFirebase(){
-  const snapshot = await db
-    .collection("medicacoes")
-    .orderBy("criadoEm")
-    .get();
-
-  snapshot.forEach(doc=>{
-    const d = doc.data();
-
-    if(!medicacaoExiste(d.nome, d.uso)){
-      banco.push({
-        id: doc.id,
-        c: d.categoria || "⭐ Medicações recém adicionadas",
-        n: d.nome,
-        u: d.uso
-      });
-    }
-  });
+  try{
+    const snapshot = await db.collection("medicacoes").orderBy("criadoEm").get();
+    snapshot.forEach(doc=>{
+      const d = doc.data();
+      if(!medicacaoExiste(d.nome, d.uso)){
+        banco.push({ id: doc.id, c: d.categoria || CAT_PADRAO, n: d.nome, u: d.uso });
+      }
+    });
+  }catch(e){
+    toast("Não foi possível carregar o banco de medicações.", "erro");
+  }
 }
 
 async function salvarMedicacaoFirebase(nome, uso, categoria){
   const user = auth.currentUser;
   if(!user) return null;
-
   const docRef = await db.collection("medicacoes").add({
-    nome: nome,
-    uso: uso,
-    categoria: categoria, // ✅ agora salva a categoria correta
+    nome, uso, categoria,
     criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
     criadoPor: user.email
   });
-
   return docRef.id;
 }
 
-/* MEDICAÇÕES */
-function adicionarMedicacao(){
- if(document.querySelectorAll(".medicacao-box").length>=LIMITE)
-  return alert("Limite máximo de 8 medicações.");
+/* ================== PDF BASE ================== */
+function selecionarPdf(file){
+  if(!file) return;
+  if(file.type !== "application/pdf"){
+    toast("Selecione um arquivo PDF.", "erro");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    pdfBaseBytes = new Uint8Array(reader.result);
+    pdfBaseNome  = file.name;
+    try{
+      localStorage.setItem("pdfBaseNome", pdfBaseNome);
+      localStorage.setItem("pdfBaseData", btoa(String.fromCharCode(...pdfBaseBytes)));
+    }catch(e){ /* arquivo grande demais para guardar */ }
+    atualizarPdfUI();
+    toast("Modelo carregado e salvo neste dispositivo.", "ok");
+  };
+  reader.readAsArrayBuffer(file);
+}
 
- const d=document.createElement("div");
- d.className="medicacao-box";
- d.innerHTML=`
- <div class="medicacao-linha">
-  <div class="num"></div>
-  <input class="med1" placeholder="Medicação" oninput="this.value=cap(this.value)">
-  <button type="button" class="btn-lupa" onclick="abrirSidebar(this)">🔍</button>
-  <button type="button" class="btn-apagar" onclick="this.closest('.medicacao-box').remove();numerar()">APAGAR</button>
- </div>
- <textarea class="med2" placeholder="Uso" oninput="this.value=cap(this.value)"></textarea>`;
- document.getElementById("listaMedicacoes").appendChild(d);
- numerar();
+function restaurarPdfBase(){
+  try{
+    const nome = localStorage.getItem("pdfBaseNome");
+    const data = localStorage.getItem("pdfBaseData");
+    if(nome && data){
+      const bin = atob(data);
+      const arr = new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++) arr[i] = bin.charCodeAt(i);
+      pdfBaseBytes = arr;
+      pdfBaseNome = nome;
+    }
+  }catch(e){ /* ignora */ }
+  atualizarPdfUI();
+}
+
+function atualizarPdfUI(){
+  const temPdf = !!pdfBaseBytes;
+  document.getElementById("dropPdf").style.display = temPdf ? "none" : "block";
+  document.getElementById("arquivoOk").style.display = temPdf ? "flex" : "none";
+  document.getElementById("arquivoNome").textContent = pdfBaseNome || "—";
+  document.getElementById("badgePdf").textContent = temPdf ? "Pronto" : "Nenhum PDF";
+}
+
+const drop = document.getElementById("dropPdf");
+["dragenter","dragover"].forEach(ev=> drop.addEventListener(ev, e=>{e.preventDefault();drop.classList.add("drag");}));
+["dragleave","drop"].forEach(ev=> drop.addEventListener(ev, e=>{e.preventDefault();drop.classList.remove("drag");}));
+drop.addEventListener("drop", e=> selecionarPdf(e.dataTransfer.files[0]));
+
+/* ================== USO ================== */
+function definirUso(valor){
+  const select = document.getElementById("uso");
+  select.value = (select.value === valor) ? "" : valor;
+  document.querySelectorAll("#segUso button").forEach(b=>{
+    b.classList.toggle("ativo", b.dataset.uso === select.value);
+  });
+  salvarRascunho();
+}
+
+/* ================== DATA ================== */
+function preencherHoje(){
+  const h = new Date();
+  document.getElementById("dataDia").value = String(h.getDate()).padStart(2,"0");
+  document.getElementById("dataMes").value = String(h.getMonth()+1).padStart(2,"0");
+  document.getElementById("dataAno").value = String(h.getFullYear());
+  salvarRascunho();
+}
+
+["dataDia","dataMes","dataAno"].forEach((id, idx, arr)=>{
+  const el = document.getElementById(id);
+  el.addEventListener("input", ()=>{
+    el.value = el.value.replace(/\D/g,"");
+    if(el.value.length === el.maxLength && arr[idx+1]){
+      document.getElementById(arr[idx+1]).focus();
+    }
+    salvarRascunho();
+  });
+});
+
+/* ================== MEDICAÇÕES ================== */
+function adicionarMedicacao(nome, uso){
+  if(document.querySelectorAll(".medicacao-box").length >= LIMITE){
+    toast("Limite máximo de " + LIMITE + " medicações.", "aviso");
+    return;
+  }
+
+  const d = document.createElement("div");
+  d.className = "medicacao-box";
+  d.innerHTML = `
+   <div class="medicacao-topo">
+     <div class="num"></div>
+     <span style="font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--muted)">MEDICAÇÃO</span>
+     <div class="medicacao-acoes">
+       <button type="button" class="btn-ghost icon-btn" title="Mover para cima" onclick="moverMedicacao(this,-1)">↑</button>
+       <button type="button" class="btn-ghost icon-btn" title="Mover para baixo" onclick="moverMedicacao(this,1)">↓</button>
+       <button type="button" class="btn-info icon-btn" title="Buscar no banco" onclick="abrirSidebar(this)">🔍</button>
+       <button type="button" class="btn-danger icon-btn" title="Remover" onclick="removerMedicacao(this)">🗑️</button>
+     </div>
+   </div>
+   <input class="med1" placeholder="Nome da medicação" oninput="this.value=cap(this.value);salvarRascunho()">
+   <textarea class="med2" placeholder="Modo de uso" oninput="this.value=cap(this.value);salvarRascunho()"></textarea>`;
+
+  document.getElementById("listaMedicacoes").appendChild(d);
+
+  if(nome) d.querySelector(".med1").value = nome;
+  if(uso)  d.querySelector(".med2").value = uso;
+
+  numerar();
+  if(!nome) d.querySelector(".med1").focus();
+  salvarRascunho();
+}
+
+function removerMedicacao(btn){
+  btn.closest(".medicacao-box").remove();
+  numerar();
+  salvarRascunho();
+}
+
+function moverMedicacao(btn, dir){
+  const box = btn.closest(".medicacao-box");
+  if(dir === -1 && box.previousElementSibling){
+    box.parentNode.insertBefore(box, box.previousElementSibling);
+  }else if(dir === 1 && box.nextElementSibling){
+    box.parentNode.insertBefore(box.nextElementSibling, box);
+  }
+  numerar();
+  salvarRascunho();
 }
 
 function numerar(){
- document.querySelectorAll(".num").forEach((e,i)=>e.textContent=(i+1)+")");
+  const boxes = document.querySelectorAll(".medicacao-box");
+  boxes.forEach((b,i)=> b.querySelector(".num").textContent = (i+1));
+  document.getElementById("badgeMed").textContent = boxes.length + " / " + LIMITE;
+  document.getElementById("medVazio").style.display = boxes.length ? "none" : "block";
 }
 
-/* SIDEBAR */
+/* ================== RASCUNHO ================== */
+let rascunhoTimer = null;
+function salvarRascunho(){
+  clearTimeout(rascunhoTimer);
+  rascunhoTimer = setTimeout(()=>{
+    const dados = {
+      nome: document.getElementById("nomePaciente").value,
+      uso: document.getElementById("uso").value,
+      dia: document.getElementById("dataDia").value,
+      mes: document.getElementById("dataMes").value,
+      ano: document.getElementById("dataAno").value,
+      meds: [...document.querySelectorAll(".medicacao-box")].map(b=>({
+        n: b.querySelector(".med1").value,
+        u: b.querySelector(".med2").value
+      }))
+    };
+    try{ localStorage.setItem("rascunhoReceita", JSON.stringify(dados)); }catch(e){}
+  }, 300);
+}
+
+function restaurarRascunho(){
+  let dados = null;
+  try{ dados = JSON.parse(localStorage.getItem("rascunhoReceita") || "null"); }catch(e){}
+  if(!dados) return false;
+
+  document.getElementById("nomePaciente").value = dados.nome || "";
+  if(dados.uso) definirUso(dados.uso);
+  document.getElementById("dataDia").value = dados.dia || "";
+  document.getElementById("dataMes").value = dados.mes || "";
+  document.getElementById("dataAno").value = dados.ano || "";
+  (dados.meds || []).forEach(m => adicionarMedicacao(m.n, m.u));
+  numerar();
+  return !!(dados.nome || (dados.meds || []).length);
+}
+
+/* ================== SIDEBAR ================== */
 function abrirSidebar(btn){
- campoAtual=btn.closest(".medicacao-box");
- document.getElementById("sidebar").style.display="flex";
- renderizarLista();
+  campoAtual = btn.closest(".medicacao-box");
+  document.getElementById("sidebar").style.display = "flex";
+  const busca = document.getElementById("buscaSidebar");
+  busca.value = "";
+  renderizarLista();
+  setTimeout(()=> busca.focus(), 60);
 }
 function fecharSidebar(){
- document.getElementById("sidebar").style.display="none";
+  document.getElementById("sidebar").style.display = "none";
 }
-
-/* 🔥 FORMULÁRIO MANUAL DA SIDEBAR */
+document.addEventListener("keydown", e=>{
+  if(e.key !== "Escape") return;
+  if(document.getElementById("modalPrevia").classList.contains("aberto")){
+    fecharPrevia();
+  }else{
+    fecharSidebar();
+  }
+});
 
 function abrirFormularioManual(){
   const f = document.getElementById("formManual");
-  f.style.display = f.style.display === "none" ? "block" : "none";
-  carregarCategorias();
+  f.style.display = f.style.display === "block" ? "none" : "block";
+  if(f.style.display === "block"){
+    carregarCategorias();
+    document.getElementById("novaMedicacao").focus();
+  }
 }
 
 function carregarCategorias(){
   const select = document.getElementById("categoriaSelect");
   const inputNova = document.getElementById("novaCategoria");
-
   select.innerHTML = "";
 
   const categorias = [...new Set(banco.map(m => m.c))];
-
   categorias.forEach(c=>{
     const o = document.createElement("option");
-    o.value = c;
-    o.textContent = c;
+    o.value = c; o.textContent = c;
     select.appendChild(o);
   });
 
@@ -370,26 +967,20 @@ function carregarCategorias(){
   }
 }
 
-/* 🔥 COLE ESTA FUNÇÃO LOGO ABAIXO */
 function sincronizarSelectCategorias(){
   const select = document.getElementById("categoriaSelect");
   if(!select) return;
-
   carregarCategorias();
-
   const categoriasAtuais = [...new Set(banco.map(m => m.c))];
-
   if(!categoriasAtuais.includes(select.value)){
     select.value = "__nova__";
     document.getElementById("novaCategoria").style.display = "block";
   }
 }
 
-
 function verificarNovaCategoria(){
   const v = document.getElementById("categoriaSelect").value;
-  document.getElementById("novaCategoria").style.display =
-    v === "__nova__" ? "block" : "none";
+  document.getElementById("novaCategoria").style.display = v === "__nova__" ? "block" : "none";
 }
 
 async function salvarMedicacaoManual(){
@@ -398,389 +989,365 @@ async function salvarMedicacaoManual(){
   const nome      = document.getElementById("novaMedicacao").value.trim();
   const uso       = document.getElementById("novoUso").value.trim();
 
-  if(!nome || !uso){
-    alert("Preencha a medicação e o uso.");
-    return;
-  }
+  if(!nome || !uso) return toast("Preencha a medicação e o uso.", "aviso");
 
   const categoria = catSelect === "__nova__" ? novaCat : catSelect;
+  if(!categoria) return toast("Informe a categoria.", "aviso");
+  if(medicacaoExiste(nome, uso)) return toast("Essa medicação já existe.", "aviso");
 
-  if(!categoria){
-    alert("Informe a categoria.");
-    return;
-  }
+  const id = await salvarMedicacaoFirebase(nome, uso, categoria);
+  if(!id) return toast("Não foi possível salvar.", "erro");
 
-  if(medicacaoExiste(nome, uso)){
-    alert("Essa medicação já existe.");
-    return;
-  }
+  banco.push({ id, c: categoria, n: nome, u: uso });
+  renderizarLista(document.getElementById("buscaSidebar").value);
+  carregarCategorias();
+  document.getElementById("categoriaSelect").value = categoria;
+  verificarNovaCategoria();
 
-const id = await salvarMedicacaoFirebase(nome, uso, categoria);
-
-  if(id){
-    banco.push({
-      id: id,
-      c: categoria,
-      n: nome,
-      u: uso
-    });
-
-renderizarLista();
-
-// 🔄 ATUALIZAR SELECT DE CATEGORIAS
-carregarCategorias();
-
-// 🔥 SE FOI NOVA CATEGORIA, SELECIONA ELA
-const select = document.getElementById("categoriaSelect");
-select.value = categoria;
-
-// 🔥 LIMPAR CAMPOS PARA PRÓXIMA MEDICAÇÃO
-document.getElementById("novaMedicacao").value = "";
-document.getElementById("novoUso").value = "";
-
-const selectCat = document.getElementById("categoriaSelect");
-const inputNova = document.getElementById("novaCategoria");
-
-// Se estava criando nova categoria
-if(selectCat.value === "__nova__"){
-  inputNova.value = "";
-  inputNova.focus();
-}else{
-  // mantém categoria e foca no nome da medicação
+  document.getElementById("novaMedicacao").value = "";
+  document.getElementById("novoUso").value = "";
   document.getElementById("novaMedicacao").focus();
+
+  toast("Medicação salva no banco.", "ok");
 }
 
-  }
-}
- async function mudarCategoria(index, novaCategoria){
+async function mudarCategoria(index, novaCategoria){
   const m = banco[index];
   if(!m || !novaCategoria) return;
-
   m.c = novaCategoria;
-
   if(m.id){
-    await db.collection("medicacoes").doc(m.id).update({
-      categoria: novaCategoria
-    });
+    await db.collection("medicacoes").doc(m.id).update({ categoria: novaCategoria });
   }
-
-renderizarLista();
-sincronizarSelectCategorias();
+  renderizarLista(document.getElementById("buscaSidebar").value);
+  sincronizarSelectCategorias();
+  toast("Categoria atualizada.", "ok");
 }
 
 function renderizarLista(f=""){
   const lista = document.getElementById("listaSidebar");
   lista.innerHTML = "";
 
-  // Agrupar por categoria
+  const filtro = f.toLowerCase().trim();
   const categorias = {};
 
   banco
-    .filter(m => (m.n + m.u).toLowerCase().includes(f.toLowerCase()))
+    .filter(m => (m.n + " " + m.u).toLowerCase().includes(filtro))
     .forEach(m => {
       if(!categorias[m.c]) categorias[m.c] = [];
       categorias[m.c].push(m);
     });
 
+  const chaves = Object.keys(categorias);
 
-  Object.keys(categorias).forEach(cat => {
-    // Cabeçalho da categoria (aba)
-const cabecalho = document.createElement("div");
-cabecalho.className = "categoria-aba";
-cabecalho.innerHTML = `
-  <span>${cat}</span>
+  if(chaves.length === 0){
+    lista.innerHTML = '<div class="sem-resultado">Nenhuma medicação encontrada.<br>Use "Adicionar medicação manualmente".</div>';
+    return;
+  }
 
-  <div style="display:flex;gap:6px;align-items:center">
-    <button
-      style="font-size:11px;background:#3498db;padding:4px 8px"
-      onclick="event.stopPropagation(); editarCategoria('${cat}')">
-      Editar
-    </button>
-    <span>▸</span>
-  </div>
-`;
+  chaves.forEach(cat => {
+    const cabecalho = document.createElement("div");
+    cabecalho.className = "categoria-aba";
+    cabecalho.innerHTML = `
+      <div class="cat-nome">
+        <span>${cat}</span>
+        <span class="cat-count">${categorias[cat].length}</span>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn-ghost btn-xs" onclick="event.stopPropagation(); editarCategoria('${cat.replace(/'/g,"\\'")}')">Editar</button>
+        <span class="seta">▸</span>
+      </div>`;
 
-    // Container dos itens
     const itensBox = document.createElement("div");
     itensBox.className = "categoria-itens";
 
-categorias[cat].forEach(m => {
-  const index = banco.indexOf(m);
+    categorias[cat].forEach(m => {
+      const index = banco.indexOf(m);
+      const categoriasUnicas = [...new Set(banco.map(x => x.c))];
 
-  const i = document.createElement("div");
-  i.className = "item";
-  const categoriasUnicas = [...new Set(banco.map(x => x.c))];
-
-i.innerHTML = `
-  <strong>${m.n}</strong><br>
-  ${m.u}
-
-  <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
-<select style="font-size:12px"
-  onchange="mudarCategoria(${index}, this.value)">
-      ${categoriasUnicas.map(c =>
-        `<option value="${c}" ${c===m.c?"selected":""}>${c}</option>`
-      ).join("")}
-    </select>
-
-<button style="background:#2980b9;font-size:12px"
-  onclick="editarMedicacao(${index})">✏️ Editar</button>
-
-<button style="background:#e74c3c;font-size:12px"
-  onclick="apagarMedicacao(${index})">🗑️ Apagar</button>
-
-  </div>
-`;
+      const i = document.createElement("div");
+      i.className = "item";
+      i.innerHTML = `
+        <span class="item-nome">${m.n}</span>
+        <span class="item-uso">${m.u}</span>
+        <div class="item-acoes">
+          <select onchange="mudarCategoria(${index}, this.value)" onclick="event.stopPropagation()">
+            ${categoriasUnicas.map(c => `<option value="${c}" ${c===m.c?"selected":""}>${c}</option>`).join("")}
+          </select>
+          <button class="btn-info btn-xs" onclick="event.stopPropagation();editarMedicacao(${index})">✏️ Editar</button>
+          <button class="btn-danger btn-xs" onclick="event.stopPropagation();apagarMedicacao(${index})">🗑️ Apagar</button>
+        </div>`;
 
       i.onclick = (e) => {
         if(e.target.tagName === "BUTTON" || e.target.tagName === "SELECT") return;
+        if(!campoAtual) return;
         campoAtual.querySelector(".med1").value = m.n;
         campoAtual.querySelector(".med2").value = m.u;
+        salvarRascunho();
         fecharSidebar();
+        toast("Medicação inserida na receita.", "ok");
       };
 
       itensBox.appendChild(i);
     });
 
-    // Clique para expandir/recolher
     cabecalho.onclick = () => {
       const aberta = itensBox.classList.contains("aberta");
-
       document.querySelectorAll(".categoria-itens").forEach(c => c.classList.remove("aberta"));
-      document.querySelectorAll(".categoria-aba span:last-child").forEach(s => s.textContent = "▸");
-
+      document.querySelectorAll(".categoria-aba .seta").forEach(s => s.textContent = "▸");
       if(!aberta){
         itensBox.classList.add("aberta");
-        cabecalho.querySelector("span:last-child").textContent = "▾";
+        cabecalho.querySelector(".seta").textContent = "▾";
       }
     };
 
     lista.appendChild(cabecalho);
     lista.appendChild(itensBox);
-  });
 
+    // Ao buscar, já abre as categorias com resultado
+    if(filtro){
+      itensBox.classList.add("aberta");
+      cabecalho.querySelector(".seta").textContent = "▾";
+    }
+  });
 }
+
 async function editarMedicacao(index){
   const m = banco[index];
   if(!m) return;
 
   const novoNome = prompt("Editar medicação:", m.n);
-  if(!novoNome) return;
-
+  if(novoNome === null) return;
   const novoUso = prompt("Editar uso:", m.u);
-  if(!novoUso) return;
+  if(novoUso === null) return;
+  if(!novoNome.trim() || !novoUso.trim()) return toast("Campos não podem ficar vazios.", "aviso");
 
   m.n = novoNome.trim();
   m.u = novoUso.trim();
 
   if(m.id){
-    await db.collection("medicacoes").doc(m.id).update({
-      nome: m.n,
-      uso: m.u
-    });
+    await db.collection("medicacoes").doc(m.id).update({ nome: m.n, uso: m.u });
   }
-
-  renderizarLista();
+  renderizarLista(document.getElementById("buscaSidebar").value);
+  toast("Medicação atualizada.", "ok");
 }
 
 async function apagarMedicacao(index){
   const m = banco[index];
   if(!m) return;
+  if(!confirm(`Apagar "${m.n}" do banco de medicações?`)) return;
 
-  if(!confirm("Deseja realmente apagar esta medicação?")) return;
-
-  if(m.id){
-    await db.collection("medicacoes").doc(m.id).delete();
-  }
-
+  if(m.id) await db.collection("medicacoes").doc(m.id).delete();
   banco.splice(index, 1);
-  renderizarLista();
+  renderizarLista(document.getElementById("buscaSidebar").value);
   sincronizarSelectCategorias();
+  toast("Medicação apagada.", "ok");
 }
 
 async function editarCategoria(nomeAtual){
   const novoNome = prompt("Editar nome da categoria:", nomeAtual);
   if(!novoNome || novoNome.trim() === nomeAtual) return;
 
-  // Atualiza banco local
-  banco.forEach(m => {
-    if(m.c === nomeAtual){
-      m.c = novoNome.trim();
-    }
-  });
+  banco.forEach(m => { if(m.c === nomeAtual) m.c = novoNome.trim(); });
 
-  // Atualiza Firebase
-  const snap = await db
-    .collection("medicacoes")
-    .where("categoria", "==", nomeAtual)
-    .get();
+  const snap = await db.collection("medicacoes").where("categoria", "==", nomeAtual).get();
+  snap.forEach(doc => doc.ref.update({ categoria: novoNome.trim() }));
 
-  snap.forEach(doc=>{
-    doc.ref.update({ categoria: novoNome.trim() });
-  });
-
-  renderizarLista();
+  renderizarLista(document.getElementById("buscaSidebar").value);
   sincronizarSelectCategorias();
+  toast("Categoria renomeada.", "ok");
 }
 
-/* GERAR PDF */
-async function gerarPDF(){
- const file=document.getElementById("pdfBase").files[0];
- if(!file) return alert("Selecione o PDF base.");
+/* ================== GERAR PDF ================== */
+/* Valida os campos e devolve os dados, ou null se houver erro */
+function validarReceita(){
+  if(!pdfBaseBytes){ toast("Selecione o PDF base.", "aviso"); return null; }
 
- /* 🔥 SALVAR MEDICAÇÕES NOVAS NO FIREBASE */
- for(const b of document.querySelectorAll(".medicacao-box")){
-   const nome = b.querySelector(".med1").value.trim();
-   const uso  = b.querySelector(".med2").value.trim();
+  const nome = document.getElementById("nomePaciente").value.trim();
+  if(!nome){ toast("Informe o nome do paciente.", "aviso"); return null; }
 
-   if(nome && uso && !medicacaoExiste(nome, uso)){
-const id = await salvarMedicacaoFirebase(
-  nome,
-  uso,
-  "⭐ Medicações recém adicionadas"
-);
+  const boxes = [...document.querySelectorAll(".medicacao-box")];
+  if(boxes.length === 0){ toast("Adicione ao menos uma medicação.", "aviso"); return null; }
+  if(boxes.some(b => !b.querySelector(".med1").value.trim())){
+    toast("Há medicação sem nome preenchido.", "aviso"); return null;
+  }
 
-if(id){
-  banco.push({
-    id: id, 
-    c: "⭐ Medicações recém adicionadas",
-    n: nome,
-    u: uso
-      });
+  return { nome, boxes };
+}
+
+/* Monta o PDF preenchido e devolve os bytes */
+async function montarPDF(dados){
+  const pdf  = await PDFLib.PDFDocument.load(pdfBaseBytes.slice(0));
+  const font = await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
+  const p    = pdf.getPages()[0];
+
+  /* NOME */
+  p.drawText(dados.nome, {x:188,     y:1361.5, size:28, font});
+  p.drawText(dados.nome, {x:1370.25, y:1361.5, size:28, font});
+
+  /* USO */
+  const usoValor = document.getElementById("uso").value;
+  if(usoValor){
+    p.drawText(usoValor, {x:406.4,  y:1150.64, size:28, font});
+    p.drawText(usoValor, {x:1587.4, y:1150.64, size:28, font});
+  }
+
+  /* MEDICAÇÕES */
+  let y = 1009.17;
+  dados.boxes.forEach((b,i)=>{
+    const t = `${i+1}) ${b.querySelector(".med1").value}\n${b.querySelector(".med2").value}`;
+    p.drawText(t, {x:157,     y, size:28, font, lineHeight:30});
+    p.drawText(t, {x:1339.33, y, size:28, font, lineHeight:30});
+    y -= 120;
+  });
+
+  /* DATA */
+  const d = document.getElementById("dataDia").value;
+  const m = document.getElementById("dataMes").value;
+  const a = document.getElementById("dataAno").value;
+
+  if(d && m && a){
+    p.drawText(d, {x:878,   y:171.83, size:28, font});
+    p.drawText(m, {x:933.5, y:171.83, size:28, font});
+    p.drawText(a, {x:990.5, y:171.83, size:28, font});
+
+    p.drawText(d, {x:2060.5, y:171.83, size:28, font});
+    p.drawText(m, {x:2117.5, y:171.83, size:28, font});
+    p.drawText(a, {x:2172,   y:171.83, size:28, font});
+  }
+
+  return await pdf.save();
+}
+
+/* Salva no banco as medicações digitadas que ainda não existem */
+async function salvarNovasMedicacoes(boxes){
+  for(const b of boxes){
+    const nome = b.querySelector(".med1").value.trim();
+    const uso  = b.querySelector(".med2").value.trim();
+    if(nome && uso && !medicacaoExiste(nome, uso)){
+      const id = await salvarMedicacaoFirebase(nome, uso, CAT_PADRAO);
+      if(id) banco.push({ id, c: CAT_PADRAO, n: nome, u: uso });
     }
   }
 }
 
- const pdf=await PDFLib.PDFDocument.load(await file.arrayBuffer());
- const font=await pdf.embedFont(PDFLib.StandardFonts.TimesRoman);
- const p=pdf.getPages()[0];
+/* ================== PRÉVIA ================== */
+async function abrirPrevia(){
+  const dados = validarReceita();
+  if(!dados) return;
 
- /* NOME */
- p.drawText(document.getElementById("nomePaciente").value,{x:188,y:1361.5,size:28,font});
- p.drawText(document.getElementById("nomePaciente").value,{x:1370.25,y:1361.5,size:28,font});
+  const btn   = document.getElementById("btnPdf");
+  const modal = document.getElementById("modalPrevia");
+  const frame = document.getElementById("previaFrame");
+  const carreg = document.getElementById("previaCarregando");
 
- /* ✅ USO CORRIGIDO */
- const usoValor = document.getElementById("uso").value;
- if(usoValor){
-  p.drawText(usoValor,{x:406.4,y:1150.64,size:28,font});
-  p.drawText(usoValor,{x:1587.4,y:1150.64,size:28,font});
- }
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">⏳</span> Montando...';
 
- /* MEDICAÇÕES */
- let y=1009.17;
- document.querySelectorAll(".medicacao-box").forEach((b,i)=>{
-  const t=`${i+1}) ${b.querySelector(".med1").value}\n${b.querySelector(".med2").value}`;
-  p.drawText(t,{x:157,y,size:28,font,lineHeight:30});
-  p.drawText(t,{x:1339.33,y,size:28,font,lineHeight:30});
-  y-=120;
- });
+  modal.classList.add("aberto");
+  document.body.style.overflow = "hidden";
+  frame.style.display = "none";
+  carreg.style.display = "flex";
 
- /* DATA */
- const d = document.getElementById("dataDia").value;
- const m = document.getElementById("dataMes").value;
- const a = document.getElementById("dataAno").value;
+  try{
+    await salvarNovasMedicacoes(dados.boxes);
 
- if(d && m && a){
-  p.drawText(d,{x:878,y:171.83,size:28,font});
-  p.drawText(m,{x:933.5,y:171.83,size:28,font});
-  p.drawText(a,{x:990.5,y:171.83,size:28,font});
+    const bytes = await montarPDF(dados);
+    previaBlob = new Blob([bytes], {type:"application/pdf"});
 
-  p.drawText(d,{x:2060.5,y:171.83,size:28,font});
-  p.drawText(m,{x:2117.5,y:171.83,size:28,font});
-  p.drawText(a,{x:2172,y:171.83,size:28,font});
- }
+    if(previaUrl) URL.revokeObjectURL(previaUrl);
+    previaUrl = URL.createObjectURL(previaBlob);
 
- const bytes=await pdf.save();
- const blob=new Blob([bytes],{type:"application/pdf"});
- const aTag=document.createElement("a");
- aTag.href=URL.createObjectURL(blob);
-// 🔥 NOME DO PACIENTE PARA O ARQUIVO
-const nomePaciente = document
-  .getElementById("nomePaciente")
-  .value
-  .trim() || "Paciente";
+    previaNomeArquivo = `Receituário - ${dados.nome.replace(/[\\\/:*?"<>|]/g, "")}.pdf`;
+    document.getElementById("previaInfo").textContent =
+      `${dados.nome} · ${dados.boxes.length} medicação(ões)`;
 
-// Remove caracteres inválidos para nome de arquivo
-const nomeSeguro = nomePaciente.replace(/[\\\/:*?"<>|]/g, "");
-
-aTag.download = `Receituário - ${nomeSeguro}.pdf`;
- aTag.click();
- URL.revokeObjectURL(aTag.href);
+    frame.src = previaUrl + "#toolbar=0&navpanes=0&view=FitH";
+    frame.onload = () => {
+      carreg.style.display = "none";
+      frame.style.display = "block";
+    };
+    // fallback caso o onload não dispare no visualizador de PDF
+    setTimeout(()=>{
+      carreg.style.display = "none";
+      frame.style.display = "block";
+    }, 1200);
+  }catch(e){
+    console.error(e);
+    fecharPrevia();
+    toast("Erro ao montar a prévia. Verifique o modelo selecionado.", "erro");
+  }finally{
+    btn.disabled = false;
+    btn.textContent = "👁️ Conferir receita";
+  }
 }
+
+function fecharPrevia(){
+  document.getElementById("modalPrevia").classList.remove("aberto");
+  document.getElementById("previaFrame").src = "about:blank";
+  document.body.style.overflow = "";
+}
+
+function imprimirPrevia(){
+  const frame = document.getElementById("previaFrame");
+  try{
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+  }catch(e){
+    // Alguns navegadores bloqueiam imprimir o PDF direto do quadro
+    const w = window.open(previaUrl, "_blank");
+    if(!w) toast("Permita pop-ups para imprimir, ou use Baixar PDF.", "aviso");
+  }
+}
+
+function baixarPrevia(){
+  if(!previaUrl) return;
+  const aTag = document.createElement("a");
+  aTag.href = previaUrl;
+  aTag.download = previaNomeArquivo || "Receituário.pdf";
+  aTag.click();
+  toast("PDF baixado.", "ok");
+}
+
+/* ================== LIMPAR ================== */
 function limparDados(){
   if(!confirm("Deseja limpar todos os campos da receita?")) return;
 
-  // Nome do paciente
   document.getElementById("nomePaciente").value = "";
-
-  // Uso
   document.getElementById("uso").value = "";
-
-  // Data
-  document.getElementById("dataDia").value = "";
-  document.getElementById("dataMes").value = "";
-  document.getElementById("dataAno").value = "";
-
-  // Medicações
+  document.querySelectorAll("#segUso button").forEach(b=> b.classList.remove("ativo"));
   document.getElementById("listaMedicacoes").innerHTML = "";
 
-  // PDF base NÃO é apagado
-}
-/* FIREBASE CONFIG */
-const firebaseConfig = {
-  apiKey: "AIzaSyAhWOQRO47_RiBjj2RG4BXf7lhYy6KNiDg",
-  authDomain: "receituario-3c175.firebaseapp.com",
-  projectId: "receituario-3c175",
-  storageBucket: "receituario-3c175.firebasestorage.app",
-  messagingSenderId: "809180223495",
-  appId: "1:809180223495:web:b6004647b7a0c6965f32a2"
-};
-
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-/* LOGIN */
-function login(){
-  const email = document.getElementById("loginEmail").value;
-  const senha = document.getElementById("loginSenha").value;
-
-  auth.signInWithEmailAndPassword(email, senha)
-    .catch(err => alert("Erro: " + err.message));
+  preencherHoje();
+  numerar();
+  localStorage.removeItem("rascunhoReceita");
+  toast("Campos limpos.", "ok");
+  // O PDF base NÃO é apagado
 }
 
-/* CONTROLE DE SESSÃO */
+/* ================== SESSÃO ================== */
 auth.onAuthStateChanged(user=>{
-  const login = document.getElementById("loginBox");
+  const loginBox = document.getElementById("loginBox");
   const app = document.getElementById("app");
 
   if(user){
-    login.style.display = "none";
+    loginBox.style.display = "none";
     app.style.display = "block";
+    document.getElementById("usuarioEmail").textContent = user.email || "";
 
-    carregarMedicacoesFirebase(); // 🔥 AQUI
+    restaurarPdfBase();
+    const tinhaRascunho = restaurarRascunho();
+    if(!tinhaRascunho) preencherHoje();
+    if(!document.querySelectorAll(".medicacao-box").length) adicionarMedicacao();
+    numerar();
+
+    carregarMedicacoesFirebase();
   }else{
-    login.style.display = "block";
+    loginBox.style.display = "flex";
     app.style.display = "none";
+    document.getElementById("loginSenha").value = "";
   }
 });
-
-/* LOGOUT (opcional) */
-function logout(){
-  auth.signOut();
-}
 </script>
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
