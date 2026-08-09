@@ -445,7 +445,6 @@ button:disabled{opacity:.55;cursor:not-allowed;filter:none}
           <span id="usuarioEmail">—</span>
         </div>
       </div>
-      <button class="btn-ghost btn-sm" onclick="abrirBancoParaCadastro()" title="Banco de medicações">🗂️ Banco</button>
       <button class="btn-ghost btn-sm" onclick="logout()">Sair</button>
     </div>
   </header>
@@ -458,8 +457,6 @@ button:disabled{opacity:.55;cursor:not-allowed;filter:none}
         <div class="sec-num">1</div>
         <h3>Modelo de receituário</h3>
         <span class="badge" id="badgePdf">Nenhum PDF</span>
-        <button type="button" class="btn-ghost btn-xs" id="btnDrive" style="margin-left:8px" onclick="carregarDoDrive()" title="Carregar receita do Google Drive">☁️ Carregar receita</button>
-        <button type="button" class="btn-ghost btn-xs" onclick="configurarLinkDrive()" title="Alterar link do Drive">⚙️</button>
       </div>
 
       <input type="file" id="pdfBase" accept="application/pdf" style="display:none" onchange="selecionarPdf(this.files[0])">
@@ -520,10 +517,6 @@ button:disabled{opacity:.55;cursor:not-allowed;filter:none}
 
       <button type="button" class="btn-info btn-block" style="margin-top:12px" onclick="adicionarMedicacao()">
         ➕ Adicionar medicação
-      </button>
-
-      <button type="button" class="btn-ghost btn-block" style="margin-top:8px" onclick="abrirBancoParaCadastro()">
-        🗂️ Cadastrar medicação no banco
       </button>
     </section>
 
@@ -792,100 +785,6 @@ function atualizarPdfUI(){
   document.getElementById("badgePdf").textContent = temPdf ? "Pronto" : "Nenhum PDF";
 }
 
-/* ============ CARREGAR RECEITA DO GOOGLE DRIVE ============ */
-const DRIVE_LINK_PADRAO = "https://drive.google.com/file/d/14nwpjUh9CAcRnlAji78BHy7sqVCPjR-t/view?usp=sharing";
-
-function linkDriveAtual(){
-  return localStorage.getItem("driveLink") || DRIVE_LINK_PADRAO;
-}
-
-function configurarLinkDrive(){
-  const atual = linkDriveAtual();
-  const novo = prompt("Cole o link de compartilhamento do PDF no Google Drive (o arquivo precisa estar como \"qualquer pessoa com o link\"):", atual);
-  if(novo === null) return;
-  const l = novo.trim();
-  if(!l){ localStorage.removeItem("driveLink"); toast("Link redefinido para o padrão.", "ok"); return; }
-  if(!extrairIdDrive(l)){ toast("Não reconheci o ID nesse link do Drive.", "erro"); return; }
-  localStorage.setItem("driveLink", l);
-  toast("Link do Drive salvo.", "ok");
-}
-
-function extrairIdDrive(link){
-  if(!link) return null;
-  let m = link.match(/\/file\/d\/([a-zA-Z0-9_-]{10,})/);
-  if(m) return m[1];
-  m = link.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
-  if(m) return m[1];
-  m = link.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
-  if(m) return m[1];
-  if(/^[a-zA-Z0-9_-]{20,}$/.test(link.trim())) return link.trim();
-  return null;
-}
-
-function pdfValido(buf){
-  if(!buf || buf.length < 1000) return false;
-  if(String.fromCharCode(...buf.slice(0,5)).indexOf("%PDF") !== 0) return false;
-  // confere o marcador de fim de arquivo (evita download truncado por proxy)
-  const cauda = buf.slice(Math.max(0, buf.length - 4096));
-  let txt = "";
-  for(let i=0;i<cauda.length;i++) txt += String.fromCharCode(cauda[i]);
-  return txt.indexOf("%%EOF") !== -1;
-}
-
-async function carregarDoDrive(){
-  const link = linkDriveAtual();
-  const id = extrairIdDrive(link);
-  if(!id){ toast("Configure um link válido do Drive (⚙️).", "erro"); return; }
-
-  const btn = document.getElementById("btnDrive");
-  const txtOriginal = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = "⏳ Carregando...";
-
-  const direto = `https://drive.usercontent.google.com/download?id=${id}&export=download`;
-  const alt    = `https://drive.google.com/uc?export=download&id=${id}`;
-  const tentativas = [
-    direto,
-    alt,
-    "https://api.allorigins.win/raw?url=" + encodeURIComponent(direto),
-    "https://corsproxy.io/?url=" + encodeURIComponent(direto)
-  ];
-
-  let bytes = null, ultimoErro = "";
-  for(const url of tentativas){
-    try{
-      const resp = await fetch(url, { redirect: "follow", mode: "cors", cache: "no-store" });
-      if(!resp.ok){ ultimoErro = "HTTP " + resp.status; continue; }
-      const buf = new Uint8Array(await resp.arrayBuffer());
-      if(!pdfValido(buf)){ ultimoErro = "arquivo inválido ou incompleto"; continue; }
-      bytes = buf; break;
-    }catch(e){ ultimoErro = (e && e.message) ? e.message : "falha de rede"; }
-  }
-
-  btn.disabled = false;
-  btn.textContent = txtOriginal;
-
-  if(!bytes){
-    toast("Não consegui baixar automaticamente (" + ultimoErro + "). Vou abrir o arquivo no Drive: baixe e envie aqui pelo campo do PDF.", "erro");
-    try{ window.open(direto, "_blank", "noopener"); }catch(e){}
-    try{ document.getElementById("pdfBase").click(); }catch(e){}
-    return;
-  }
-
-  pdfBaseBytes = bytes;
-  pdfBaseNome  = "Receita (Google Drive).pdf";
-  try{
-    let bin = "";
-    for(let i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
-    localStorage.setItem("pdfBaseNome", pdfBaseNome);
-    localStorage.setItem("pdfBaseData", btoa(bin));
-  }catch(e){ /* arquivo grande demais para guardar */ }
-  atualizarPdfUI();
-  toast("Receita carregada do Google Drive.", "ok");
-}
-
-
-
 const drop = document.getElementById("dropPdf");
 ["dragenter","dragover"].forEach(ev=> drop.addEventListener(ev, e=>{e.preventDefault();drop.classList.add("drag");}));
 ["dragleave","drop"].forEach(ev=> drop.addEventListener(ev, e=>{e.preventDefault();drop.classList.remove("drag");}));
@@ -1033,18 +932,6 @@ document.addEventListener("keydown", e=>{
     fecharSidebar();
   }
 });
-
-function abrirBancoParaCadastro(){
-  campoAtual = null;                 /* não insere na receita: só cadastra no banco */
-  document.getElementById("sidebar").style.display = "flex";
-  document.getElementById("buscaSidebar").value = "";
-  renderizarLista();
-
-  const f = document.getElementById("formManual");
-  f.style.display = "block";
-  carregarCategorias();
-  setTimeout(()=> document.getElementById("novaMedicacao").focus(), 60);
-}
 
 function abrirFormularioManual(){
   const f = document.getElementById("formManual");
