@@ -445,6 +445,7 @@ button:disabled{opacity:.55;cursor:not-allowed;filter:none}
           <span id="usuarioEmail">—</span>
         </div>
       </div>
+      <button class="btn-ghost btn-sm" onclick="abrirBancoParaCadastro()" title="Banco de medicações">🗂️ Banco</button>
       <button class="btn-ghost btn-sm" onclick="logout()">Sair</button>
     </div>
   </header>
@@ -517,6 +518,10 @@ button:disabled{opacity:.55;cursor:not-allowed;filter:none}
 
       <button type="button" class="btn-info btn-block" style="margin-top:12px" onclick="adicionarMedicacao()">
         ➕ Adicionar medicação
+      </button>
+
+      <button type="button" class="btn-ghost btn-block" style="margin-top:8px" onclick="abrirBancoParaCadastro()">
+        🗂️ Cadastrar medicação no banco
       </button>
     </section>
 
@@ -932,6 +937,18 @@ document.addEventListener("keydown", e=>{
     fecharSidebar();
   }
 });
+
+function abrirBancoParaCadastro(){
+  campoAtual = null;                 /* não insere na receita: só cadastra no banco */
+  document.getElementById("sidebar").style.display = "flex";
+  document.getElementById("buscaSidebar").value = "";
+  renderizarLista();
+
+  const f = document.getElementById("formManual");
+  f.style.display = "block";
+  carregarCategorias();
+  setTimeout(()=> document.getElementById("novaMedicacao").focus(), 60);
+}
 
 function abrirFormularioManual(){
   const f = document.getElementById("formManual");
